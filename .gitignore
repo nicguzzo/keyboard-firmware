@@ -1,3 +1,9 @@
 *.hex
 *.elf
 *.o
+*.bin
+*.sublime-project
+*.sublime-workspace
+*.dep
+.mxproject
+master/build

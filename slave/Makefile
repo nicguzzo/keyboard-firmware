@@ -14,10 +14,11 @@
 
 DEVICE     = attiny2313
 CLOCK      = 8000000
-PROGRAMMER = -c usbasp -P /dev/tty.usb* -b 19200 
+#CLOCK      = 1000000
+PROGRAMMER = -c usbasp 
 OBJECTS    = main.o
 #FUSES      = -U lfuse:w:0x64:m -U hfuse:w:0xdd:m -U efuse:w:0xff:m
-FUSES      = -U lfuse:w:0xe4:m -U hfuse:w:0xdD:m -U efuse:w:0xff:m
+FUSES      = -U lfuse:w:0xe4:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
 
 
 
@@ -25,14 +26,21 @@ FUSES      = -U lfuse:w:0xe4:m -U hfuse:w:0xdD:m -U efuse:w:0xff:m
 ######################################################################
 
 # Tune the lines below only if you know what you are doing:
-
-AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
-COMPILE = avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+#BINPATH = /home/nico/.arduino15/packages/arduino/tools/avr-gcc/4.9.2-atmel3.5.4-arduino2/bin/
+BINPATH =
+#AVRDUDE_PATH= /home/nico/.arduino15/packages/arduino/tools/avrdude/6.3.0-arduino9/bin/
+AVRDUDE_PATH=
+#AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
+AVRDUDE = $(AVRDUDE_PATH)avrdude $(PROGRAMMER) -p attiny2313
+COMPILE = $(BINPATH)avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+SIZE    = $(BINPATH)avr-size -C --mcu=$(DEVICE) main.elf
 
 # symbolic targets:
-all:	main.hex
+all:	main.hex size
 
 .c.o:
+	$(COMPILE) -c $< -o $@
+.cpp.o:
 	$(COMPILE) -c $< -o $@
 
 .S.o:
@@ -47,7 +55,8 @@ all:	main.hex
 
 flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i
-
+size:
+	$(SIZE)
 fuse:
 	$(AVRDUDE) $(FUSES)
 
