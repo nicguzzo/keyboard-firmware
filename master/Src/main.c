@@ -48,10 +48,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f1xx_hal.h"
-#include "usb_device.h"
+#include "usb/usb_device.h"
+#include "usb/usbd_cdc_if.h"
+//#include "usb/USBSerial.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <stm32_hal_legacy.h>
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -61,9 +63,11 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
 uint8_t keys[20];
 uint8_t data[10];
 char  tmp[48];
+uint8_t endline[2];
 #define I2C_ADDRESS (0x8<<1)
 HAL_StatusTypeDef ret;
 const char *bit_rep[16] = {
@@ -72,7 +76,10 @@ const char *bit_rep[16] = {
     [ 8] = "1000", [ 9] = "1001", [10] = "1010", [11] = "1011",
     [12] = "1100", [13] = "1101", [14] = "1110", [15] = "1111",
 };
-
+void init_keyboard();
+void test_kb();
+void SystemClock_Config48(void);
+void HAL_I2C_ClearBusyFlagErrata_2_14_7(I2C_HandleTypeDef *hi2c);
 
 /* USER CODE END PV */
 
@@ -88,13 +95,7 @@ static void MX_I2C2_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-extern USBD_HandleTypeDef hUsbDeviceFS; 
-uint8_t buffer[9];
-void keyboard_write(uint8_t char1){
-    buffer[2]=char1;
-    USBD_HID_SendReport(&hUsbDeviceFS,buffer,sizeof(buffer));
-    //HAL_Delay(200);
-} 
+
 
 /* USER CODE END 0 */
 
@@ -103,7 +104,8 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   int i;
-
+  endline[0]='\n';
+  endline[1]='\r';
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/
@@ -126,34 +128,27 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
-  MX_I2C2_Init();
+  //MX_I2C2_Init();
 
   /* USER CODE BEGIN 2 */
-    buffer[0]=0x00;  //to control Ctrl ,Shift ,Alt ....
-    buffer[1]=0x00; 
-    buffer[2]=0x0b; 
-    buffer[3]=0x00; 
-    buffer[4]=0x00; 
-    buffer[5]=0x00; 
-    buffer[6]=0x00; 
-    buffer[7]=0x00;
-    buffer[8]=0x00;
-    USBD_HID_SendReport(&hUsbDeviceFS,buffer,sizeof(buffer)); 
-  //data[0]=0x0;  
-  //ret=HAL_I2C_Master_Transmit (&hi2c1, I2C_ADDRESS, data, 2,(uint32_t)200);
-  //sprintf(tmp,"ret1 0x%x err 0x%x\n\r",ret,hi2c1.ErrorCode);
-  //HAL_UART_Transmit(&huart1,tmp,strlen(tmp),500);
-  //HAL_Delay(1000);
-
+    
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  init_keyboard();
+  MX_I2C2_Init();
   HAL_Delay(300);
-  while(ret=HAL_I2C_IsDeviceReady(&hi2c2, I2C_ADDRESS,5,500)!=HAL_OK){  
+  
+  while((ret=HAL_I2C_IsDeviceReady(&hi2c2, I2C_ADDRESS,5,500))!=HAL_OK){
     sprintf(tmp,"ret1 0x%x\n\r",ret);
-    HAL_UART_Transmit(&huart1,tmp,strlen(tmp),500);
+    HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+    HAL_I2C_DeInit(&hi2c2);
+    HAL_Delay(100);
+    MX_I2C2_Init();
   }
+  
   while (1)
   {
   /* USER CODE END WHILE */
@@ -163,28 +158,31 @@ int main(void)
     ret=HAL_I2C_Master_Transmit (&hi2c2, I2C_ADDRESS, data, 1,(uint32_t)500);
     if(HAL_OK!=ret){
       sprintf(tmp,"ret2 0x%x\n\r",ret);
-      HAL_UART_Transmit(&huart1,tmp,strlen(tmp),500);
+      HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
     }else{
     
       ret=HAL_I2C_Master_Receive (&hi2c2, I2C_ADDRESS, keys, 6,(uint32_t)500);
       if(HAL_OK!=ret){
         sprintf(tmp,"ret3 0x%x\n\r",ret);
-        HAL_UART_Transmit(&huart1,tmp,strlen(tmp),500);
+        HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
       }else{
         for(i=0;i<6;i++){
           if(i==0 && (keys[i] & 0x1) ){
-            keyboard_write(0x8);
+            //keyboard_write(0x8);
+            test_kb();
+            data[0]='h';
+            data[1]='i';
+            CDC_Transmit_FS(data,2);
           }
           sprintf(tmp,"%d ",keys[i]);
-          HAL_UART_Transmit(&huart1,tmp,strlen(tmp),500);
-          HAL_UART_Transmit(&huart1,bit_rep[keys[i] >> 4],4,500);
-          HAL_UART_Transmit(&huart1,bit_rep[keys[i] & 0x0F],4,500);
-          HAL_UART_Transmit(&huart1,"\n\r",2,500);
+          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] >> 4],4,500);
+          HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] & 0x0F],4,500);
+          HAL_UART_Transmit(&huart1,endline,2,500);
         }  
       }
     }
     HAL_Delay(10);
-
   }
   /* USER CODE END 3 */
 
@@ -192,6 +190,7 @@ int main(void)
 
 /** System Clock Configuration
 */
+
 void SystemClock_Config(void)
 {
 
@@ -251,7 +250,7 @@ static void MX_I2C2_Init(void)
 {
 
   hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.ClockSpeed = 400000;
   hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -327,7 +326,7 @@ void _Error_Handler(char * file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  while(1) 
+  //while(1) 
   {
   }
   /* USER CODE END Error_Handler_Debug */ 

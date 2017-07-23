@@ -10,7 +10,7 @@
 #define USI_CONTROL     USICR
 #define USI_ADDRESS     0x8
 
-#define NONE        0
+#define NONE          0
 #define ACK_PR_RX     1
 #define BYTE_RX       2
 #define ACK_PR_TX     3

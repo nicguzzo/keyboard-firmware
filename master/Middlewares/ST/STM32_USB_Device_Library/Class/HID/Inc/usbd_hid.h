@@ -49,12 +49,11 @@
 /** @defgroup USBD_HID_Exported_Defines
   * @{
   */ 
-#define HID_EPIN_ADDR                 0x81
-#define HID_EPIN_SIZE                 0x04
+#define HID_EPIN_ADDR                 0x85
+#define HID_EPIN_SIZE                 0x40
 
 #define USB_HID_CONFIG_DESC_SIZ       34
 #define USB_HID_DESC_SIZ              9
-#define HID_MOUSE_REPORT_DESC_SIZE    74
 
 #define HID_DESCRIPTOR_TYPE           0x21
 #define HID_REPORT_DESC               0x22
@@ -71,6 +70,9 @@
 
 #define HID_REQ_SET_REPORT            0x09
 #define HID_REQ_GET_REPORT            0x01
+
+#define HID_MAX_REPORT_DESCRIPTORS    0x04
+
 /**
   * @}
   */ 
@@ -92,7 +94,9 @@ typedef struct
   uint32_t             Protocol;   
   uint32_t             IdleState;  
   uint32_t             AltSetting;
-  HID_StateTypeDef     state;  
+  HID_StateTypeDef     state; 
+  uint16_t             reportDescriptorSizes[HID_MAX_REPORT_DESCRIPTORS];
+  uint8_t              *reportDescriptors[HID_MAX_REPORT_DESCRIPTORS];
 }
 USBD_HID_HandleTypeDef; 
 /**
@@ -115,6 +119,10 @@ USBD_HID_HandleTypeDef;
 
 extern USBD_ClassTypeDef  USBD_HID;
 #define USBD_HID_CLASS    &USBD_HID
+
+extern USBD_HID_HandleTypeDef HID_Handle;
+extern uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ];
+
 /**
   * @}
   */ 
