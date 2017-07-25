@@ -11,3 +11,4 @@ _saved_*.sch
 .mxproject
 master/build
 slave/pcb/*.pdf
+slave/pcb/conn_board/*-cache.lib
