@@ -1,7 +1,7 @@
 #ifndef KEYBOARD_h
 #define KEYBOARD_h
 
-#include "USBDevice.h"
+#include "./usb.h"
 #include "usbd_hid.h"
 
 
@@ -110,26 +110,22 @@ enum {
     KP_EQUALS = IS_KEY_CODE + 103,
 };
 
-class KeyboardClass: public HIDDevice{
-    public:
+typedef struct {
+    HIDDevice_t device;
+    uint8_t report[9];
+}keyboard_t;
         
-        void press(uint8_t ch);
-        void release(uint8_t ch);
-        
-        virtual size_t write(uint8_t ch);
-        
-        void pressScanCode(uint8_t keyCode);
-        void releaseScanCode(uint8_t keyCode);
-        void setModifiers(uint8_t modifiers);
-        
-        virtual uint8_t *getReportDescriptor();
-        virtual uint16_t getReportDescriptorSize();
-        
-    private:
-        uint8_t report[9] = {0};
-        void sendReport();
-};
+void keyboard_press(uint8_t ch);
+void keyboard_release(uint8_t ch);
 
-extern KeyboardClass Keyboard;
+size_t keyboard_write(uint8_t ch);
+
+void keyboard_pressScanCode(uint8_t keyCode);
+void keyboard_releaseScanCode(uint8_t keyCode);
+void keyboard_setModifiers(uint8_t modifiers);
+        
+void init_keyboard();
+
+extern keyboard_t keyboard;
 
 #endif

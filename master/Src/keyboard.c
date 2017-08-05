@@ -1,5 +1,9 @@
-#include "Keyboard.h"
+#include "keyboard.h"
 #include "stm32f1xx_hal.h"
+
+//instance
+keyboard_t keyboard;
+
 __ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[]  __ALIGN_END = {
 0x05, 0x01,  // USAGE_PAGE (Generic Desktop)
 0x09, 0x06,  // USAGE (Keyboard)
@@ -30,6 +34,12 @@ __ALIGN_BEGIN static uint8_t HID_KEYBOARD_ReportDesc[]  __ALIGN_END = {
 0x81, 0x00,  //   INPUT (Data,Ary,Abs)
 0xc0,        // END_COLLECTION
 };
+
+void init_keyboard(){
+    memset(keyboard.report,0,sizeof(keyboard.report));
+    keyboard.device.ReportDescriptor=HID_KEYBOARD_ReportDesc;
+    keyboard.device.ReportDescriptorSize=sizeof(HID_KEYBOARD_ReportDesc);
+}
 
 #define SHIFT 0x80
 const uint8_t _asciimap[128] =
@@ -165,77 +175,68 @@ const uint8_t _asciimap[128] =
     0              // DEL
 };
 
-uint8_t *KeyboardClass::getReportDescriptor() {
-    return HID_KEYBOARD_ReportDesc;
-}
-
-uint16_t KeyboardClass::getReportDescriptorSize() {
-    return sizeof(HID_KEYBOARD_ReportDesc);
-}
-        
-void KeyboardClass::press(uint8_t ch) {
-    if (ch > IS_KEY_CODE) {
-        pressScanCode(ch - IS_KEY_CODE);
-    } else {
-        if ((_asciimap[ch] & SHIFT) == SHIFT) {
-            setModifiers(MODIFIER_SHIFT);
-        } else {
-            setModifiers(0);
-        }
-        pressScanCode(_asciimap[ch] & 0x7F);
-    }
-}
-
-void KeyboardClass::release(uint8_t ch) {
-    if (ch > IS_KEY_CODE) {
-        releaseScanCode(ch - IS_KEY_CODE);
-    } else {
-        setModifiers(0);
-        releaseScanCode(_asciimap[ch] & 0x7F);
-    }
-}
-
-size_t KeyboardClass::write(uint8_t ch) {
-    press(ch);
-    release(ch);
-    return 1;
-}
-
-void KeyboardClass::pressScanCode(uint8_t keyCode) {
-    for(int i=3; i<9; i++) {
-        if (report[i] == 0) {
-            report[i] = keyCode & 0x7F;
-            break;
-        }
-    }
-    
-    sendReport();
-}
-
-void KeyboardClass::releaseScanCode(uint8_t keyCode) {
-    for(int i=3; i<9; i++) {
-        if (report[i] == (keyCode & 0x7F)) {
-            report[i] = 0;
-            break;
-        }
-    }
-    sendReport();
-}
-
-void KeyboardClass::setModifiers(uint8_t modifiers) {
-    report[1] = modifiers;
-}
-
-
-void KeyboardClass::sendReport() {
-    report[0] = HIDReportID;
+static void keyboard_sendReport() {
+    keyboard.report[0] = keyboard.device.HIDReportID;
     
     int timeout_millis = HID_FS_BINTERVAL;
-    while (USBD_HID_SendReport(usbDevice, report, sizeof(report)) != USBD_OK && timeout_millis > 0) {
+    while (USBD_HID_SendReport(keyboard.device.usbDevice, keyboard.report, sizeof(keyboard.report)) != USBD_OK && timeout_millis > 0) {
         //delay(1);
         HAL_Delay(1);
         timeout_millis--;
     }
 }
+ 
+void keyboard_press(uint8_t ch) {
+    if (ch > IS_KEY_CODE) {
+        keyboard_pressScanCode(ch - IS_KEY_CODE);
+    } else {
+        if ((_asciimap[ch] & SHIFT) == SHIFT) {
+            keyboard_setModifiers(MODIFIER_SHIFT);
+        } else {
+            keyboard_setModifiers(0);
+        }
+        keyboard_pressScanCode(_asciimap[ch] & 0x7F);
+    }
+}
 
-KeyboardClass Keyboard;
+void keyboard_release(uint8_t ch) {
+    if (ch > IS_KEY_CODE) {
+        keyboard_releaseScanCode(ch - IS_KEY_CODE);
+    } else {
+        keyboard_setModifiers(0);
+        keyboard_releaseScanCode(_asciimap[ch] & 0x7F);
+    }
+}
+
+size_t keyboard_write(uint8_t ch) {
+    keyboard_press(ch);
+    keyboard_release(ch);
+    return 1;
+}
+
+void keyboard_pressScanCode(uint8_t keyCode) {
+    for(int i=3; i<9; i++) {
+        if (keyboard.report[i] == 0) {
+            keyboard.report[i] = keyCode & 0x7F;
+            break;
+        }
+    }
+    
+    keyboard_sendReport();
+}
+
+void keyboard_releaseScanCode(uint8_t keyCode) {
+    for(int i=3; i<9; i++) {
+        if (keyboard.report[i] == (keyCode & 0x7F)) {
+            keyboard.report[i] = 0;
+            break;
+        }
+    }
+    keyboard_sendReport();
+}
+
+void keyboard_setModifiers(uint8_t modifiers) {
+    keyboard.report[1] = modifiers;
+}
+
+

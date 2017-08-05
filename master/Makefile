@@ -82,10 +82,14 @@ Src/usb/usbd_desc.c \
 Src/usb/usbd_conf.c \
 Src/usb/usb_descriptors.c \
 Src/usb/usb_device.c \
+Src/usb.c \
+Src/keyboard.c \
+Src/mouse.c \
 Src/main.c
 
-CXX_SOURCES = Src/usb/USBDevice.cpp Src/usb/Keyboard.cpp Src/usb/Mouse.cpp Src/keyboard.cpp 
 
+#CXX_SOURCES = Src/usb/USBDevice.cpp Src/usb/Keyboard.cpp Src/usb/Mouse.cpp Src/keyboard.cpp 
+CXX_SOURCES =
 # ASM sources
 ASM_SOURCES =  \
 startup_stm32f103xb.s

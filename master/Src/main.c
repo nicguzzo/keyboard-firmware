@@ -53,7 +53,9 @@
 //#include "usb/USBSerial.h"
 
 /* USER CODE BEGIN Includes */
-#include <stm32_hal_legacy.h>
+//#include <stm32_hal_legacy.h>
+#include "keyboard.h"
+#include "mouse.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -159,6 +161,8 @@ int main(void)
   HAL_GPIO_WritePin(GPIOB,GPIO_PIN_7,1);
   HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,1);
   init_keyboard();
+  init_mouse();
+  beginSerialHID(&mouse.device, &keyboard.device);
   MX_I2C2_Init();
   HAL_Delay(300);
   
@@ -185,10 +189,16 @@ int main(void)
         if(k==1 && keys_master[i*5+j]==0){          
           sprintf(tmp,"key press %d\n\r",i*5+j);
           HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          if(i==0 && j==0){
+            keyboard_press('Q');
+          }
         }
         if(k==0 && keys_master[i*5+j]==1){
           sprintf(tmp,"key release %d\n\r",i*5+j);
           HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          if(i==0 && j==0){
+            keyboard_release('Q');
+          }
         }
         keys_master[i*5+j]=k;
       }  
@@ -240,6 +250,7 @@ int main(void)
       }
     }
     //set_rgb(rand()>>16,rand()>>16,rand()>>16);
+
     HAL_Delay(10);
   }
   /* USER CODE END 3 */
