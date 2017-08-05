@@ -59,6 +59,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim2;
+
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
@@ -79,7 +81,6 @@ const char *bit_rep[16] = {
 void init_keyboard();
 void test_kb();
 void SystemClock_Config48(void);
-void HAL_I2C_ClearBusyFlagErrata_2_14_7(I2C_HandleTypeDef *hi2c);
 
 /* USER CODE END PV */
 
@@ -88,6 +89,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM2_Init(void);
+                                    
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                                
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -96,6 +101,11 @@ static void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN 0 */
 
+void set_rgb(int r,int g,int b){
+  TIM2->CCR1=r;
+  TIM2->CCR2=g;
+  TIM2->CCR3=b;
+}
 
 /* USER CODE END 0 */
 
@@ -103,7 +113,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-  int i;
+  GPIO_PinState keys_master[30];
+  int keys_slave[30];
+  int i,j,k;
   endline[0]='\n';
   endline[1]='\r';
   /* USER CODE END 1 */
@@ -129,14 +141,23 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
   //MX_I2C2_Init();
-
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-    
-  
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
+
+  set_rgb(65535,0,0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+  /* USER CODE BEGIN WHILE */  
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3,1);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_4,1);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5,1);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_6,1);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_7,1);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,1);
   init_keyboard();
   MX_I2C2_Init();
   HAL_Delay(300);
@@ -154,6 +175,27 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+    //read master matrix
+    for(i=0;i<6;i++){
+      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,0);
+      HAL_Delay(2);
+      for(j=0;j<5;j++){
+        //keys_master[i*5+j]=HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
+        k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
+        if(k==1 && keys_master[i*5+j]==0){          
+          sprintf(tmp,"key press %d\n\r",i*5+j);
+          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+        }
+        if(k==0 && keys_master[i*5+j]==1){
+          sprintf(tmp,"key release %d\n\r",i*5+j);
+          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+        }
+        keys_master[i*5+j]=k;
+      }  
+      HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,1);    
+    }
+
+    //read from slave via i2c
     data[0]=0x0;
     ret=HAL_I2C_Master_Transmit (&hi2c2, I2C_ADDRESS, data, 1,(uint32_t)500);
     if(HAL_OK!=ret){
@@ -167,21 +209,37 @@ int main(void)
         HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
       }else{
         for(i=0;i<6;i++){
-          if(i==0 && (keys[i] & 0x1) ){
+          for(j=0;j<5;j++){
+            //keys_slave[i*5+j]=((keys[i]>>j) & 0x1);
+            k=((keys[i]>>j) & 0x1);
+            if(k==1 && keys_slave[i*5+j]==0){
+              sprintf(tmp,"key press %d\n\r",30-(i*5+j)+29);
+              HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+            }
+            if(k==0 && keys_slave[i*5+j]==1){
+              sprintf(tmp,"key release %d\n\r",30-(i*5+j)+29);
+              HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+            }
+            keys_slave[i*5+j]=k;
+          }  
+          //if(i==0 && (keys[i] & 0x1) ){
             //keyboard_write(0x8);
-            test_kb();
-            data[0]='h';
-            data[1]='i';
-            CDC_Transmit_FS(data,2);
-          }
-          sprintf(tmp,"%d ",keys[i]);
-          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
-          HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] >> 4],4,500);
-          HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] & 0x0F],4,500);
-          HAL_UART_Transmit(&huart1,endline,2,500);
+            //test_kb();
+            //data[0]='h';
+            //data[1]='i';
+            //CDC_Transmit_FS(data,2);
+            //sprintf(tmp,"rand_max%d\n\r",RAND_MAX);
+            //HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          //}
+          //sprintf(tmp,"%d ",keys[i]);
+          //HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          //HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] >> 4],4,500);
+          //HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] & 0x0F],4,500);
+          //HAL_UART_Transmit(&huart1,endline,2,500);
         }  
       }
     }
+    //set_rgb(rand()>>16,rand()>>16,rand()>>16);
     HAL_Delay(10);
   }
   /* USER CODE END 3 */
@@ -299,11 +357,15 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
+                          |GPIO_PIN_7|GPIO_PIN_8, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -311,9 +373,84 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PA3 PA4 PA5 PA6 
+                           PA7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
+                          |GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB3 PB4 PB5 PB6 
+                           PB7 PB8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6 
+                          |GPIO_PIN_7|GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
+
+static void MX_TIM2_Init(void)
+{
+
+  TIM_ClockConfigTypeDef sClockSourceConfig;
+  TIM_MasterConfigTypeDef sMasterConfig;
+  TIM_OC_InitTypeDef sConfigOC;
+
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 65535;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+  HAL_TIM_MspPostInit(&htim2);
+
+}
 
 /* USER CODE END 4 */
 
