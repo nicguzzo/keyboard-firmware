@@ -2,14 +2,19 @@
 #define _H_LAYERS
 #include "keyboard.h"
 
+#define MAX_LAYERS 8
+#define MAX_KEYS 30
+#define DISABLED_KEY -1
+
 typedef struct{
-  uint16_t keys[30];
+  uint16_t keys[MAX_KEYS];
 }layer_t;
 
 typedef struct {
   uint8_t current_layer_l;
   uint8_t current_layer_r;
   uint8_t command_mode;
+  uint8_t layer_key;
 }layer_state_t;
 
 void init_layers();
@@ -19,6 +24,10 @@ void send_event(uint16_t code,uint8_t press);
 enum {
   NEXT_LAYER=0x1000,
   PREV_LAYER,
+  NEXT_LAYER_R,
+  PREV_LAYER_R,
+  NEXT_LAYER_L,
+  PREV_LAYER_L,
   LAYER_1,
   LAYER_2,
   LAYER_3,
@@ -46,7 +55,7 @@ enum {
 };
 
 extern layer_state_t layer_state;
-extern layer_t layers_left[8];
-extern layer_t layers_right[8];
+extern layer_t layers_left[MAX_LAYERS];
+extern layer_t layers_right[MAX_LAYERS];
 
 #endif
