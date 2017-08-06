@@ -9,10 +9,12 @@ typedef struct{
 typedef struct {
   uint8_t current_layer_l;
   uint8_t current_layer_r;
+  uint8_t command_mode;
 }layer_state_t;
 
 void init_layers();
 
+void send_event(uint16_t code,uint8_t press);
 
 enum {
   NEXT_LAYER=0x1000,
