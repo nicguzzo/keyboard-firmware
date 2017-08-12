@@ -57,6 +57,9 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "layers.h"
+#include <stdio.h>
+#include <stdarg.h>
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -69,21 +72,21 @@ UART_HandleTypeDef huart1;
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
+#define I2C_ADDRESS (0x8<<1)
+
 uint8_t keys[20];
 uint8_t data[10];
-char  tmp[48];
+char  tmp[128];
 uint8_t endline[2];
-#define I2C_ADDRESS (0x8<<1)
+
 HAL_StatusTypeDef ret;
-const char *bit_rep[16] = {
+/*const char *bit_rep[16] = {
     [ 0] = "0000", [ 1] = "0001", [ 2] = "0010", [ 3] = "0011",
     [ 4] = "0100", [ 5] = "0101", [ 6] = "0110", [ 7] = "0111",
     [ 8] = "1000", [ 9] = "1001", [10] = "1010", [11] = "1011",
     [12] = "1100", [13] = "1101", [14] = "1110", [15] = "1111",
-};
+};*/
 void init_keyboard();
-void test_kb();
-void SystemClock_Config48(void);
 
 /* USER CODE END PV */
 
@@ -105,11 +108,83 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 /* USER CODE BEGIN 0 */
 
 void set_rgb(int r,int g,int b){
-  TIM2->CCR1=r;
+  TIM2->CCR1=b;
   TIM2->CCR2=g;
-  TIM2->CCR3=b;
+  TIM2->CCR3=r;
+}
+void Log(const char* fmt, ...)
+{
+  va_list va;    
+  va_start(va, fmt);
+  vsnprintf(tmp, 127, fmt, va);      
+  va_end(va);
+  HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+}
+#define flashAddress 0x8000000
+uint32_t saveAddress =flashAddress+(1024*64); // last page
+
+uint8_t *layers_8=(uint8_t *)&layers;
+uint16_t *layers_16=(uint16_t *)&layers;
+uint32_t mSize=sizeof(layers_t);
+uint32_t mSize_16=sizeof(layers_t)>>1;
+
+void show_hal_error(char *msg,HAL_StatusTypeDef stat){
+  switch(stat){
+    case HAL_OK:      Log("%s Hal status HAL_OK\r\n",msg);      break;
+    case HAL_ERROR:   Log("%s Hal status HAL_ERROR\r\n",msg);   break;
+    case HAL_BUSY:    Log("%s Hal status HAL_BUSY\r\n",msg);    break;
+    case HAL_TIMEOUT: Log("%s Hal status HAL_TIMEOUT\r\n",msg); break;
+  }
 }
 
+void writeFlash(void)
+{
+  uint32_t i,j;
+  uint32_t PageError; 
+  HAL_StatusTypeDef stat;
+
+  FLASH_EraseInitTypeDef einfo;
+  einfo.TypeErase=FLASH_TYPEERASE_PAGES;
+  einfo.Banks=FLASH_BANK_1;
+  einfo.PageAddress =saveAddress;
+  einfo.NbPages=1;
+  
+  stat=HAL_FLASH_Unlock();
+  if(stat!=HAL_OK){
+    show_hal_error("HAL_FLASH_Unlock",stat);
+  }
+  stat=HAL_FLASHEx_Erase(&einfo,&PageError);
+  if(stat!=HAL_OK){
+    show_hal_error("HAL_FLASHEx_Erase",stat);
+  }
+  if(PageError == 0xFFFFFFFF){
+    Log("erase ok.\r\n");
+  }else{
+    Log("erase failed at dir %#x.\r\n",PageError);
+  }
+  for(i=0,j=0; i<mSize_16; i++,j+=2){
+    stat=HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,saveAddress+j,layers_16[i]);
+    if(stat!=HAL_OK){
+      show_hal_error("HAL_FLASH_Program",stat);
+    }
+  }
+  stat=HAL_FLASH_Lock();
+  if(stat!=HAL_OK){
+    show_hal_error("HAL_FLASH_Lock",stat);
+  }
+}
+
+void readFlash(void)
+{
+  uint32_t i;
+  Log("Reading conf from flash.\r\n");
+  uint8_t* saved=(uint8_t*)saveAddress;
+  for(i=0; i<mSize; i++){
+    layers_8[i] = saved[i];
+    //Log("%#02x  %#02x \r\n",layers_8[i],saved[i]);
+  }
+  Log("done.\r\n");
+}
 /* USER CODE END 0 */
 
 int main(void)
@@ -118,7 +193,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   GPIO_PinState keys_master[30];
   int keys_slave[30];
-  int i,j,k;
+  int i,j,k,kk;
   endline[0]='\n';
   endline[1]='\r';
   /* USER CODE END 1 */
@@ -149,8 +224,10 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
+  set_rgb(0,0,0);
+   
 
-  set_rgb(65535,0,0);
+  //jsmn_init(&parser);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -163,48 +240,47 @@ int main(void)
   HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,1);
   init_keyboard();
   init_mouse();
-  init_layers();
+  
   beginSerialHID(&mouse.device, &keyboard.device);
   MX_I2C2_Init();
-  HAL_Delay(300);
+  
+  HAL_Delay(100);
+  
   
   while((ret=HAL_I2C_IsDeviceReady(&hi2c2, I2C_ADDRESS,5,500))!=HAL_OK){
-    sprintf(tmp,"ret1 0x%x\n\r",ret);
-    HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+    //Log("ret1 0x%x\n\r",ret);
+    show_hal_error("HAL_I2C_IsDeviceReady",ret);
+    
     HAL_I2C_DeInit(&hi2c2);
-    HAL_Delay(100);
+    set_rgb(65535,0,0);
+    HAL_Delay(50);
+    set_rgb(0,65535,0);    
     MX_I2C2_Init();
+    HAL_Delay(50);
   }
+  Log("conf size: %d bytes\r\n",mSize);
   
+  init_layers();
+  set_rgb(65535,0,0);
   while (1)
   {
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
     //read master matrix
-    for(i=0;i<6;i++){
+    for(i=5;i>=0;i--){
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,0);
       HAL_Delay(2);
-      for(j=0;j<5;j++){
-        //keys_master[i*5+j]=HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
+      for(j=4;j>=0;j--){
         k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
-        if(k==1 && keys_master[i*5+j]==0){          
-          sprintf(tmp,"key press r %d\n\r",i*5+j);
-          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
-          //if(i==0 && j==0){
-          //  keyboard_press('Q');
-          //}
-          send_event(i*5+j,1);
+        kk=(4-j)*6+i;
+        if(k==1 && keys_master[kk]==0){                    
+          send_event(RIGHT,kk,1);
         }
-        if(k==0 && keys_master[i*5+j]==1){
-          sprintf(tmp,"key release r %d\n\r",i*5+j);
-          HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
-          //if(i==0 && j==0){
-          //  keyboard_release('Q');
-          //}
-          send_event(i*5+j,0);
+        if(k==0 && keys_master[kk]==1){          
+          send_event(RIGHT,kk,0);
         }
-        keys_master[i*5+j]=k;
+        keys_master[kk]=k;
       }  
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,1);    
     }
@@ -213,31 +289,27 @@ int main(void)
     data[0]=0x0;
     ret=HAL_I2C_Master_Transmit (&hi2c2, I2C_ADDRESS, data, 1,(uint32_t)500);
     if(HAL_OK!=ret){
-      sprintf(tmp,"ret2 0x%x\n\r",ret);
-      HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+      show_hal_error("HAL_I2C_Master_Transmit",ret);
+      //Log("ret2 0x%x\n\r",ret);      
     }else{
     
       ret=HAL_I2C_Master_Receive (&hi2c2, I2C_ADDRESS, keys, 6,(uint32_t)500);
       if(HAL_OK!=ret){
-        sprintf(tmp,"ret3 0x%x\n\r",ret);
-        HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+        show_hal_error("HAL_I2C_Master_Receive",ret);
+        //Log("ret3 0x%x\n\r",ret);        
       }else{
         for(i=0;i<6;i++){
           for(j=0;j<5;j++){
-            //keys_slave[i*5+j]=((keys[i]>>j) & 0x1);
+            
             k=((keys[i]>>j) & 0x1);
-            if(k==1 && keys_slave[i*5+j]==0){
-              sprintf(tmp,"key press l %d\n\r",29-(i*5+j));
-              HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
-              send_event(29-(i*5+j),1);
+            kk=(j*6+i);
+            if(k==1 && keys_slave[kk]==0){              
+              send_event(LEFT,kk,1);
             }
-            if(k==0 && keys_slave[i*5+j]==1){
-              sprintf(tmp,"key release l %d\n\r",29-(i*5+j));
-              HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
-              send_event(29-(i*5+j),0);
+            if(k==0 && keys_slave[kk]==1){              
+              send_event(LEFT,kk,0);
             }
-            keys_slave[i*5+j]=k;
-
+            keys_slave[kk]=k;
           }  
           //if(i==0 && (keys[i] & 0x1) ){
             //keyboard_write(0x8);
@@ -245,11 +317,9 @@ int main(void)
             //data[0]='h';
             //data[1]='i';
             //CDC_Transmit_FS(data,2);
-            //sprintf(tmp,"rand_max%d\n\r",RAND_MAX);
-            //HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+            //Log(tmp,"rand_max%d\n\r",RAND_MAX);            
           //}
-          //sprintf(tmp,"%d ",keys[i]);
-          //HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+          //Log(tmp,"%d ",keys[i]);          
           //HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] >> 4],4,500);
           //HAL_UART_Transmit(&huart1,(uint8_t*)bit_rep[keys[i] & 0x0F],4,500);
           //HAL_UART_Transmit(&huart1,endline,2,500);
@@ -262,6 +332,83 @@ int main(void)
   }
   /* USER CODE END 3 */
 
+}
+
+void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
+  Log("cmd: \r\n");
+  HAL_UART_Transmit(&huart1,data,len,500);
+  Log("\r\n");
+  char dd[20];
+  int i,j,l,k,s;
+  uint8_t code;
+  if(len>=4 && data[0]=='s' && data[1]=='a'&& data[2]=='v'&& data[3]=='e'){
+    Log("writing conf to flash...\r\n");
+    writeFlash();
+    Log("done.\r\n");
+  }
+  // r1
+  if(len>=6 && (data[0]=='r'||data[0]=='l')){    
+    if(data[0]=='r'){      
+      s=RIGHT;
+    }
+    if(data[0]=='l'){
+      s=LEFT;
+    }
+    dd[0]=data[1];    
+    dd[1]='\0';
+    l=atoi(dd); //layer
+    dd[0]=data[2];
+    dd[1]=data[3];
+    dd[2]='\0';
+    k=atoi(dd); //key    
+    Log(" side: %c layer: %d key: %d ",data[0],l,k);
+    if(k>=0 && k <MAX_KEYS){
+      if(data[4]=='c'){
+        dd[0]=data[5];
+        dd[1]=data[6];
+        dd[2]='\0';
+        code=strtoul(dd, NULL, 16) & 0xff;
+        Log("code: %#02x\r\n",code);  
+        layers.side[s][l].keys[k]=code;
+        
+      }else if (data[4]=='m'){
+        for(j=0,i=5;i<len && j<20;j++,i++){
+          dd[j]=data[i];
+        }
+        dd[j]='\0';
+        Log("modif: %s\r\n",dd);
+        layers.side[s][l].keys[k]=DISABLED_KEY;
+        if(strcmp(dd,"LSHIFT")==0){
+          layers.lshift[l]=k;
+        }
+        if(strcmp(dd,"RSHIFT")==0){
+          layers.rshift[l]=k;
+        }
+        if(strcmp(dd,"LCTRL")==0){
+          layers.lctrl[l]=k;
+        }
+        if(strcmp(dd,"RCTRL")==0){
+          layers.rctrl[l]=k;
+        }
+        if(strcmp(dd,"LALT")==0){
+          layers.lalt[l]=k;
+        }
+        if(strcmp(dd,"RALTL")==0){
+          layers.ralt[l]=k;
+        }
+        if(strcmp(dd,"LMETA")==0){
+          layers.lmeta[l]=k;
+        }
+        if(strcmp(dd,"RMETA")==0){
+          layers.rmeta[l]=k;
+        }
+
+        //if(strcmp(dd,"CMD")==0){
+          //layer_state.layer_key=k;
+        //}
+      }
+    }
+  }
 }
 
 /** System Clock Configuration

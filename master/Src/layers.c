@@ -1,74 +1,113 @@
 #include "layers.h"
 
+void readFlash(void);
 
-layer_state_t layer_state;
-layer_t layers_left[8];
-layer_t layers_right[8];
+layers_t layers;
 
 void process_commands(uint16_t code);
 
 void init_layers(){
-  int i,j;
-  layer_state.command_mode=0;
-  layer_state.current_layer_r=1;
-  layer_state.current_layer_l=1;
-  layer_state.layer_key=2;
+  //int i,j;
+  uint8_t *layers_8=(uint8_t *)&layers;
+  readFlash();
+  if(layers_8[0]==0xff){
+    layers.state.command_mode=0;
+    layers.state.curr[LEFT]=1;
+    layers.state.curr[RIGHT]=1;
+    layers.state.layer_key=27;
+  }
 
   //disable all keys by default
-  for(i=0;i<MAX_LAYERS;i++){
+  /*for(i=0;i<MAX_LAYERS;i++){
     for(j=0;j<MAX_KEYS;j++){
-      layers_left[i].keys[j]=DISABLED_KEY;
-      layers_right[i].keys[j]=DISABLED_KEY;
+      layers.side[0][i].keys[j]=DISABLED_KEY;      
+      layers.side[1][i].keys[j]=DISABLED_KEY;
     }
+  }*/
+  keyboard_setModifiers(0);
+}
+static uint8_t modifier=0;
+
+uint8_t is_modifier(uint8_t code,uint8_t l,uint8_t press){
+  uint8_t mod=1;
+
+  if(code==layers.lshift[l]){
+    if(press)
+      modifier|=KEY_MOD_LSHIFT;
+    else
+      modifier&=~KEY_MOD_LSHIFT;
+  }else if(code==layers.rshift[l]){
+    if(press)
+      modifier|=KEY_MOD_RSHIFT;
+    else
+      modifier&=~KEY_MOD_RSHIFT;
+  }else if(code==layers.lctrl[l]){
+    if(press)
+      modifier|=KEY_MOD_LCTRL;
+    else
+      modifier&=~KEY_MOD_LCTRL;
+  }else if(code==layers.rctrl[l]){
+    if(press)
+      modifier|=KEY_MOD_RCTRL;
+    else
+      modifier&=~KEY_MOD_RCTRL;
+  }else if(code==layers.lalt[l]){
+    if(press)
+      modifier|=KEY_MOD_LALT;
+    else
+      modifier&=~KEY_MOD_LALT;
+  }else if(code==layers.ralt[l]){
+    if(press)
+      modifier|=KEY_MOD_RALT;
+    else
+      modifier&=~KEY_MOD_RALT;
+  }else if(code==layers.lmeta[l]){
+    if(press)
+      modifier|=KEY_MOD_LMETA;
+    else
+      modifier&=~KEY_MOD_LMETA;
+  }else if(code==layers.rmeta[l]){
+    if(press)
+      modifier|=KEY_MOD_RMETA;
+    else
+      modifier&=~KEY_MOD_RMETA;
+  }else{
+    mod=0;    
   }
-  //layer[0] //commands layers
 
-  layers_left[0].keys[0]=NEXT_LAYER;
-  layers_left[0].keys[1]=PREV_LAYER;
-  // TODO: map all commands...
-  // ... // 
-
-  //layer[1] // user layer 1
-
-  layers_left[1].keys[0]=KEY_ENTER;
-  layers_left[1].keys[1]=KEY_SPACE;
-  layers_left[1].keys[3]=KEY_A;
-
-  // TODO: map all keycodes...
-  // ... // 
-
+  return mod;
 }
 
-void send_event(uint16_t code,uint8_t press){
-  if(layer_state.command_mode){
-    if(code==layer_state.layer_key){
-      layer_state.command_mode=0; //go back to normal      
-    }else{
-      if(code <30){
-        process_commands(layers_right[0].keys[code]);
-      }else{        
-        process_commands(layers_left[0].keys[code]);        
-      }
+void send_event(uint8_t side,uint8_t code,uint8_t press){  
+  Log("press: %d key: %d code: %#02x\n\r",press,code,layers.side[side][layers.state.curr[side]].keys[code]);
+  if(layers.state.command_mode){
+    if(code==layers.state.layer_key){
+      layers.state.command_mode=0; //go back to normal    
+      Log("leaving command mode\r\n");
+    }else{      
+      process_commands(layers.side[side][0].keys[code]);
     }
   }else{
-    if(code==layer_state.layer_key){
-      layer_state.command_mode=1; // go to command mode
+    if(code==layers.state.layer_key){
+      Log("entering command mode\r\n");
+      layers.state.command_mode=1; // go to command mode
     }else{
-      if(layers_right[layer_state.current_layer_r].keys[code]!= DISABLED_KEY){
-        if(code <30){ // right
-          if(press){
-            keyboard_press(layers_right[layer_state.current_layer_r].keys[code]);
-          }else{
-            keyboard_release(layers_right[layer_state.current_layer_r].keys[code]);
-          }    
-        }else{ //left
-          if(press){
-            keyboard_press(layers_left[layer_state.current_layer_l].keys[code-30]);
-          }else{
-            keyboard_release(layers_left[layer_state.current_layer_l].keys[code-30]);
-          }
+      if(is_modifier(code,layers.state.curr[side],press)){
+        keyboard_setModifiers(modifier);
+        if(press){
+          keyboard_pressScanCode(0);
+        }else{
+          keyboard_releaseScanCode(0);
         }
-      }
+      }else{
+        if(layers.side[side][layers.state.curr[side]].keys[code]!= DISABLED_KEY){
+          if(press){
+            keyboard_pressScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
+          }else{
+            keyboard_releaseScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
+          }    
+        }
+      }      
     }
   }
 }
@@ -76,20 +115,20 @@ void send_event(uint16_t code,uint8_t press){
 void process_commands(uint16_t code){
   switch(code){
     case NEXT_LAYER: //increments both layers
-      if(layer_state.current_layer_r<MAX_LAYERS-1){
-        layer_state.current_layer_r++;
-      }
-      if(layer_state.current_layer_l<MAX_LAYERS-1){
-        layer_state.current_layer_l++;
-      }
+    if(layers.state.curr[RIGHT]<MAX_LAYERS-1){
+      layers.state.curr[RIGHT]++;
+    }
+    if(layers.state.curr[LEFT]<MAX_LAYERS-1){
+      layers.state.curr[LEFT]++;
+    }
     break;
     case PREV_LAYER: //decremnts both layers
-      if(layer_state.current_layer_r>0){
-        layer_state.current_layer_r--;
-      }
-      if(layer_state.current_layer_l>0){
-        layer_state.current_layer_l--;
-      }
+    if(layers.state.curr[RIGHT]>0){
+      layers.state.curr[RIGHT]--;
+    }
+    if(layers.state.curr[LEFT]>0){
+      layers.state.curr[LEFT]--;
+    }
     break;
     //..
     //TODO: implement all commands

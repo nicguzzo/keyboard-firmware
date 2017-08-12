@@ -274,7 +274,7 @@ static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 
 	uint16_t len = *Len;
   
-    //USBSerial_Rx_Handler((uint8_t *)&Buf[0], len);
+    USBSerial_Rx_Handler((uint8_t *)&Buf[0], len);
 
     USBD_CDC_ReceivePacket(&hUsbDeviceFS);
 
