@@ -73,6 +73,9 @@ UART_HandleTypeDef huart1;
 /* Private variables ---------------------------------------------------------*/
 
 #define I2C_ADDRESS (0x8<<1)
+#define USE_I2C
+#define TEST
+//#define STLINK
 
 uint8_t keys[20];
 uint8_t data[10];
@@ -112,6 +115,10 @@ void set_rgb(int r,int g,int b){
   TIM2->CCR2=g;
   TIM2->CCR3=r;
 }
+
+#if defined(STLINK)
+#define Log printf
+#else
 void Log(const char* fmt, ...)
 {
   va_list va;    
@@ -120,6 +127,7 @@ void Log(const char* fmt, ...)
   va_end(va);
   HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
 }
+#endif
 #define flashAddress 0x8000000
 uint32_t saveAddress =flashAddress+(1024*64); // last page
 
@@ -148,7 +156,7 @@ void writeFlash(void)
   einfo.Banks=FLASH_BANK_1;
   einfo.PageAddress =saveAddress;
   einfo.NbPages=1;
-  
+  set_rgb(65535,0,0);
   stat=HAL_FLASH_Unlock();
   if(stat!=HAL_OK){
     show_hal_error("HAL_FLASH_Unlock",stat);
@@ -167,11 +175,13 @@ void writeFlash(void)
     if(stat!=HAL_OK){
       show_hal_error("HAL_FLASH_Program",stat);
     }
+    (i%2)?set_rgb(65535,0,0): set_rgb(0,0,65535);
   }
   stat=HAL_FLASH_Lock();
   if(stat!=HAL_OK){
     show_hal_error("HAL_FLASH_Lock",stat);
   }
+  set_rgb(0,65535,0);
 }
 
 void readFlash(void)
@@ -216,11 +226,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USB_DEVICE_Init();
+  
+  //MX_USB_DEVICE_Init();
   MX_USART1_UART_Init();
   //MX_I2C2_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  
+
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_3);
@@ -241,27 +254,36 @@ int main(void)
   init_keyboard();
   init_mouse();
   
-  beginSerialHID(&mouse.device, &keyboard.device);
+  beginSerialHID(&keyboard.device,&mouse.device);
+  
+  
+#ifdef USE_I2C
   MX_I2C2_Init();
-  
-  HAL_Delay(100);
-  
-  
   while((ret=HAL_I2C_IsDeviceReady(&hi2c2, I2C_ADDRESS,5,500))!=HAL_OK){
     //Log("ret1 0x%x\n\r",ret);
     show_hal_error("HAL_I2C_IsDeviceReady",ret);
     
     HAL_I2C_DeInit(&hi2c2);
     set_rgb(65535,0,0);
-    HAL_Delay(50);
-    set_rgb(0,65535,0);    
+    HAL_Delay(200);
+    set_rgb(0,65535,0);        
+    HAL_Delay(200);
+    set_rgb(0,0,65535);    
+    HAL_Delay(200);
+
     MX_I2C2_Init();
-    HAL_Delay(50);
+    set_rgb(65535,0,0);
+    HAL_Delay(200);
+    set_rgb(0,65535,0);        
+    HAL_Delay(200);
+    set_rgb(0,0,65535);    
+    HAL_Delay(200);
   }
+#endif
   Log("conf size: %d bytes\r\n",mSize);
   
   init_layers();
-  set_rgb(65535,0,0);
+  set_rgb(0,65535,0);
   while (1)
   {
   /* USER CODE END WHILE */
@@ -284,7 +306,7 @@ int main(void)
       }  
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,1);    
     }
-
+#ifdef USE_I2C
     //read from slave via i2c
     data[0]=0x0;
     ret=HAL_I2C_Master_Transmit (&hi2c2, I2C_ADDRESS, data, 1,(uint32_t)500);
@@ -326,9 +348,11 @@ int main(void)
         }  
       }
     }
+#endif
     //set_rgb(rand()>>16,rand()>>16,rand()>>16);
-
-    HAL_Delay(10);
+    keyboard_sendReport();
+    //key debounce
+    HAL_Delay(5);
   }
   /* USER CODE END 3 */
 
@@ -379,28 +403,28 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
         Log("modif: %s\r\n",dd);
         layers.side[s][l].keys[k]=DISABLED_KEY;
         if(strcmp(dd,"LSHIFT")==0){
-          layers.lshift[l]=k;
+          layers.side[s][l].lshift=k;
         }
         if(strcmp(dd,"RSHIFT")==0){
-          layers.rshift[l]=k;
+          layers.side[s][l].rshift=k;
         }
         if(strcmp(dd,"LCTRL")==0){
-          layers.lctrl[l]=k;
+          layers.side[s][l].lctrl=k;
         }
         if(strcmp(dd,"RCTRL")==0){
-          layers.rctrl[l]=k;
+          layers.side[s][l].rctrl=k;
         }
         if(strcmp(dd,"LALT")==0){
-          layers.lalt[l]=k;
+          layers.side[s][l].lalt=k;
         }
         if(strcmp(dd,"RALTL")==0){
-          layers.ralt[l]=k;
+          layers.side[s][l].ralt=k;
         }
         if(strcmp(dd,"LMETA")==0){
-          layers.lmeta[l]=k;
+          layers.side[s][l].lmeta=k;
         }
         if(strcmp(dd,"RMETA")==0){
-          layers.rmeta[l]=k;
+          layers.side[s][l].rmeta=k;
         }
 
         //if(strcmp(dd,"CMD")==0){

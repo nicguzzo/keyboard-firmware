@@ -28,45 +28,45 @@ void init_layers(){
 }
 static uint8_t modifier=0;
 
-uint8_t is_modifier(uint8_t code,uint8_t l,uint8_t press){
+uint8_t is_modifier(uint8_t side,uint8_t code,uint8_t l,uint8_t press){
   uint8_t mod=1;
 
-  if(code==layers.lshift[l]){
+  if(code==layers.side[side][l].lshift){
     if(press)
       modifier|=KEY_MOD_LSHIFT;
     else
       modifier&=~KEY_MOD_LSHIFT;
-  }else if(code==layers.rshift[l]){
+  }else if(code==layers.side[side][l].rshift){
     if(press)
       modifier|=KEY_MOD_RSHIFT;
     else
       modifier&=~KEY_MOD_RSHIFT;
-  }else if(code==layers.lctrl[l]){
+  }else if(code==layers.side[side][l].lctrl){
     if(press)
       modifier|=KEY_MOD_LCTRL;
     else
       modifier&=~KEY_MOD_LCTRL;
-  }else if(code==layers.rctrl[l]){
+  }else if(code==layers.side[side][l].rctrl){
     if(press)
       modifier|=KEY_MOD_RCTRL;
     else
       modifier&=~KEY_MOD_RCTRL;
-  }else if(code==layers.lalt[l]){
+  }else if(code==layers.side[side][l].lalt){
     if(press)
       modifier|=KEY_MOD_LALT;
     else
       modifier&=~KEY_MOD_LALT;
-  }else if(code==layers.ralt[l]){
+  }else if(code==layers.side[side][l].ralt){
     if(press)
       modifier|=KEY_MOD_RALT;
     else
       modifier&=~KEY_MOD_RALT;
-  }else if(code==layers.lmeta[l]){
+  }else if(code==layers.side[side][l].lmeta){
     if(press)
       modifier|=KEY_MOD_LMETA;
     else
       modifier&=~KEY_MOD_LMETA;
-  }else if(code==layers.rmeta[l]){
+  }else if(code==layers.side[side][l].rmeta){
     if(press)
       modifier|=KEY_MOD_RMETA;
     else
@@ -92,7 +92,7 @@ void send_event(uint8_t side,uint8_t code,uint8_t press){
       Log("entering command mode\r\n");
       layers.state.command_mode=1; // go to command mode
     }else{
-      if(is_modifier(code,layers.state.curr[side],press)){
+      if(is_modifier(side,code,layers.state.curr[side],press)){
         keyboard_setModifiers(modifier);
         if(press){
           keyboard_pressScanCode(0);

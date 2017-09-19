@@ -51,7 +51,8 @@
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
 
-
+void Log(const char* fmt, ...);
+uint8_t COMPOSITE_CDC_HID_DESCRIPTOR[100];
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */
@@ -134,7 +135,7 @@ USBD_ClassTypeDef  USBD_HID =
   USBD_HID_GetCfgDesc,
   USBD_HID_GetDeviceQualifierDesc,
 };
-
+#if 0
 /* USB HID device Configuration Descriptor */
 __ALIGN_BEGIN uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_END =
 {
@@ -159,7 +160,7 @@ __ALIGN_BEGIN uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_END =
   0x01,         /*bNumEndpoints*/
   0x03,         /*bInterfaceClass: HID*/
   0x01,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
-  0x02,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
+  0x01,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
   0,            /*iInterface: Index of string descriptor*/
   /******************** Descriptor of Joystick Mouse HID ********************/
   /* 18 */
@@ -184,6 +185,8 @@ __ALIGN_BEGIN uint8_t USBD_HID_CfgDesc[USB_HID_CONFIG_DESC_SIZ]  __ALIGN_END =
   HID_FS_BINTERVAL,          /*bInterval: Polling Interval (10 ms)*/
   /* 34 */
 } ;
+
+#endif
 
 /* USB HID device Configuration Descriptor */
 __ALIGN_BEGIN static uint8_t USBD_HID_Desc[USB_HID_DESC_SIZ]  __ALIGN_END  =
@@ -277,7 +280,7 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
 {
   uint16_t len = 0;
   uint8_t  *pbuf = NULL;
-  
+  Log("USBD_HID_Setup\r\n");
   switch (req->bmRequest & USB_REQ_TYPE_MASK)
   {
   case USB_REQ_TYPE_CLASS :  
@@ -286,10 +289,12 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
       
       
     case HID_REQ_SET_PROTOCOL:
+      Log("HID_REQ_SET_PROTOCOL %d\r\n",(uint8_t)(req->wValue));
       HID_Handle.Protocol = (uint8_t)(req->wValue);
       break;
       
     case HID_REQ_GET_PROTOCOL:
+      Log("HID_REQ_GET_PROTOCOL %d\r\n",(uint8_t)(req->wValue));
       USBD_CtlSendData (pdev, 
                         (uint8_t *)&HID_Handle.Protocol,
                         1);    
@@ -315,6 +320,7 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
     switch (req->bRequest)
     {
     case USB_REQ_GET_DESCRIPTOR: 
+      Log("USB_REQ_GET_DESCRIPTOR %d\r\n",req->wValue);
       if( req->wValue >> 8 == HID_REPORT_DESC)
       {
         uint8_t buf[256] = {0};
@@ -348,18 +354,23 @@ static uint8_t  USBD_HID_Setup (USBD_HandleTypeDef *pdev,
         pbuf[7] = size;
         
       }
+      //for(int i = 1; i < len; i++) {
+      //    Log("%#x , %#x\r\n",pbuf[i-1],pbuf[i]);
+      //}
       
       USBD_CtlSendData (pdev, pbuf, len);
       
       break;
       
     case USB_REQ_GET_INTERFACE :
+      Log("USB_REQ_GET_INTERFACE %d\r\n",(uint8_t)HID_Handle.AltSetting);
       USBD_CtlSendData (pdev,
                         (uint8_t *)&HID_Handle.AltSetting,
                         1);
       break;
       
     case USB_REQ_SET_INTERFACE :
+      Log("USB_REQ_SET_INTERFACE %d\r\n",(uint8_t)(req->wValue));
       HID_Handle.AltSetting = (uint8_t)(req->wValue);
       break;
     }
@@ -431,8 +442,8 @@ uint32_t USBD_HID_GetPollingInterval (USBD_HandleTypeDef *pdev)
   */
 static uint8_t  *USBD_HID_GetCfgDesc (uint16_t *length)
 {
-  *length = sizeof (USBD_HID_CfgDesc);
-  return USBD_HID_CfgDesc;
+  *length = sizeof (COMPOSITE_CDC_HID_DESCRIPTOR);
+  return COMPOSITE_CDC_HID_DESCRIPTOR;
 }
 
 

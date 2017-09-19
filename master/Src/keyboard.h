@@ -19,7 +19,7 @@ typedef struct {
 void keyboard_pressScanCode(uint8_t keyCode);
 void keyboard_releaseScanCode(uint8_t keyCode);
 void keyboard_setModifiers(uint8_t modifiers);
-        
+void keyboard_sendReport() ;        
 void init_keyboard();
 
 extern keyboard_t keyboard;

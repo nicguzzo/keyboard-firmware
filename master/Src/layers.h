@@ -8,7 +8,15 @@
 #define LEFT 0
 #define RIGHT 1
 typedef struct{
-  uint8_t keys[MAX_KEYS];    
+  uint8_t keys[MAX_KEYS];
+  uint8_t lctrl;
+  uint8_t lshift;
+  uint8_t lalt;
+  uint8_t lmeta;
+  uint8_t rctrl;
+  uint8_t rshift;
+  uint8_t ralt;
+  uint8_t rmeta;
 }layer_t;
 
 typedef struct {
@@ -19,14 +27,7 @@ typedef struct {
 
 typedef struct{
   layer_t side[2][MAX_LAYERS];
-  uint8_t lctrl[MAX_LAYERS];
-  uint8_t lshift[MAX_LAYERS];
-  uint8_t lalt[MAX_LAYERS];
-  uint8_t lmeta[MAX_LAYERS];
-  uint8_t rctrl[MAX_LAYERS];
-  uint8_t rshift[MAX_LAYERS];
-  uint8_t ralt[MAX_LAYERS];
-  uint8_t rmeta[MAX_LAYERS];
+  
   layer_state_t state;
 }layers_t;
 
