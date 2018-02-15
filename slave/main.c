@@ -77,9 +77,9 @@ int main(void) {
   
   for(;;) { 
     PORTD |= _BV(PORTD6);
-    _delay_ms(50);
+    _delay_ms(500);
     PORTD &= ~_BV(PORTD6);
-    _delay_ms(50);
+    _delay_ms(500);
   }
 
 }

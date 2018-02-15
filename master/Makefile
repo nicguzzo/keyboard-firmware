@@ -59,6 +59,8 @@ Middlewares/ST/STM32_USB_Device_Library/Class/HID/Src/usbd_hid.c \
 Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c \
+Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc.c \
+Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rtc_ex.c \
 Src/system_stm32f1xx.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash_ex.c \
 Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
@@ -86,7 +88,8 @@ Src/usb.c \
 Src/keyboard.c \
 Src/mouse.c \
 Src/layers.c \
-Src/main.c
+Src/main.c \
+bluepill_utils/utils.c
 #Src/jsmn.c \
 
 

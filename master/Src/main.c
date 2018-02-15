@@ -54,6 +54,7 @@
 
 /* USER CODE BEGIN Includes */
 //#include <stm32_hal_legacy.h>
+#include "../bluepill_utils/utils.h"
 #include "keyboard.h"
 #include "mouse.h"
 #include "layers.h"
@@ -214,13 +215,14 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  init_vector_table();
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  reenumerate_usb();
 
   /* USER CODE END SysInit */
 
@@ -289,6 +291,7 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+    check_bootloader();
     //read master matrix
     for(i=5;i>=0;i--){
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,0);
