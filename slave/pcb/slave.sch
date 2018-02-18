@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:slave-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -28,6 +29,7 @@ LIBS:opto
 LIBS:atmel
 LIBS:contrib
 LIBS:valves
+LIBS:slave-cache
 EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
@@ -54,14 +56,14 @@ F 3 "" H 5100 4100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X06 J1
+L Conn_01x06 J1
 U 1 1 59779918
-P 7300 3550
-F 0 "J1" H 7300 3900 50  0000 C CNN
-F 1 "CONN_01X06" V 7400 3550 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 7300 3550 50  0001 C CNN
-F 3 "" H 7300 3550 50  0001 C CNN
-	1    7300 3550
+P 7300 3500
+F 0 "J1" H 7300 3850 50  0000 C CNN
+F 1 "row" V 7400 3500 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 7300 3500 50  0001 C CNN
+F 3 "" H 7300 3500 50  0001 C CNN
+	1    7300 3500
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -70,7 +72,7 @@ U 1 1 59779981
 P 8150 3700
 F 0 "R3" H 8180 3720 50  0000 L CNN
 F 1 "4.7k" H 8180 3660 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 8150 3700 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 8150 3700 50  0001 C CNN
 F 3 "" H 8150 3700 50  0001 C CNN
 	1    8150 3700
 	1    0    0    -1  
@@ -81,7 +83,7 @@ U 1 1 59779A28
 P 8500 3700
 F 0 "R4" H 8530 3720 50  0000 L CNN
 F 1 "4.7k" H 8530 3660 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 8500 3700 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 8500 3700 50  0001 C CNN
 F 3 "" H 8500 3700 50  0001 C CNN
 	1    8500 3700
 	1    0    0    -1  
@@ -92,7 +94,7 @@ U 1 1 59779A61
 P 3600 3150
 F 0 "R1" H 3630 3170 50  0000 L CNN
 F 1 "10k" H 3630 3110 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3600 3150 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3600 3150 50  0001 C CNN
 F 3 "" H 3600 3150 50  0001 C CNN
 	1    3600 3150
 	1    0    0    -1  
@@ -103,20 +105,20 @@ U 1 1 59779AC2
 P 6700 5050
 F 0 "R2" H 6730 5070 50  0000 L CNN
 F 1 "1k" H 6730 5010 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 6700 5050 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 6700 5050 50  0001 C CNN
 F 3 "" H 6700 5050 50  0001 C CNN
 	1    6700 5050
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_01X02 J3
+L Conn_01x02 J3
 U 1 1 59779AF9
-P 8950 4050
-F 0 "J3" H 8950 4200 50  0000 C CNN
-F 1 "CONN_01X02" V 9050 4050 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 8950 4050 50  0001 C CNN
-F 3 "" H 8950 4050 50  0001 C CNN
-	1    8950 4050
+P 8950 4000
+F 0 "J3" H 8950 4150 50  0000 C CNN
+F 1 "i2c_conn" V 9050 4000 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 8950 4000 50  0001 C CNN
+F 3 "" H 8950 4000 50  0001 C CNN
+	1    8950 4000
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -232,14 +234,14 @@ Wire Wire Line
 	8350 3450 8350 3500
 Connection ~ 8350 3500
 $Comp
-L CONN_01X06 J2
+L Conn_01x06 J2
 U 1 1 5977A334
-P 7350 4450
-F 0 "J2" H 7350 4800 50  0000 C CNN
-F 1 "CONN_01X06" V 7450 4450 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 7350 4450 50  0001 C CNN
-F 3 "" H 7350 4450 50  0001 C CNN
-	1    7350 4450
+P 7350 4400
+F 0 "J2" H 7350 4750 50  0000 C CNN
+F 1 "col" V 7450 4400 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x06_Pitch2.54mm" H 7350 4400 50  0001 C CNN
+F 3 "" H 7350 4400 50  0001 C CNN
+	1    7350 4400
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -260,7 +262,7 @@ U 1 1 5977A776
 P 3200 3950
 F 0 "R5" H 3230 3970 50  0000 L CNN
 F 1 "1k" H 3230 3910 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3200 3950 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3200 3950 50  0001 C CNN
 F 3 "" H 3200 3950 50  0001 C CNN
 	1    3200 3950
 	1    0    0    -1  
@@ -271,12 +273,11 @@ U 1 1 5977A80C
 P 3500 3950
 F 0 "R6" H 3530 3970 50  0000 L CNN
 F 1 "1k" H 3530 3910 50  0000 L CNN
-F 2 "Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3500 3950 50  0001 C CNN
+F 2 "Resistors_ThroughHole:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" H 3500 3950 50  0001 C CNN
 F 3 "" H 3500 3950 50  0001 C CNN
 	1    3500 3950
 	1    0    0    -1  
 $EndComp
-Connection ~ 6700 5450
 $Comp
 L LED D3
 U 1 1 5977A86F
@@ -338,7 +339,7 @@ U 1 1 5977AB96
 P 2150 3000
 F 0 "C1" H 2160 3070 50  0000 L CNN
 F 1 "C_Small" H 2160 2920 50  0000 L CNN
-F 2 "Capacitors_THT:C_Disc_D3.4mm_W2.1mm_P2.50mm" H 2150 3000 50  0001 C CNN
+F 2 "Capacitors_ThroughHole:C_Disc_D3.4mm_W2.1mm_P2.50mm" H 2150 3000 50  0001 C CNN
 F 3 "" H 2150 3000 50  0001 C CNN
 	1    2150 3000
 	1    0    0    -1  
@@ -385,14 +386,14 @@ Wire Wire Line
 Wire Wire Line
 	5100 3000 5100 2800
 $Comp
-L CONN_01X02 J4
+L Conn_01x02 J4
 U 1 1 5977B868
-P 2700 3000
-F 0 "J4" H 2700 3150 50  0000 C CNN
-F 1 "CONN_01X02" V 2800 3000 50  0000 C CNN
-F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 2700 3000 50  0001 C CNN
-F 3 "" H 2700 3000 50  0001 C CNN
-	1    2700 3000
+P 2700 2950
+F 0 "J4" H 2700 3100 50  0000 C CNN
+F 1 "power_conn" V 2800 2950 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm" H 2700 2950 50  0001 C CNN
+F 3 "" H 2700 2950 50  0001 C CNN
+	1    2700 2950
 	1    0    0    -1  
 $EndComp
 Wire Wire Line

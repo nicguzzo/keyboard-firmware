@@ -12,3 +12,6 @@ _saved_*.sch
 master/build
 slave/pcb/*.pdf
 *-cache.lib
+*.gcode
+*.gbr
+*.drl
