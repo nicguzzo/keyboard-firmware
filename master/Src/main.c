@@ -76,7 +76,7 @@ UART_HandleTypeDef huart1;
 #define I2C_ADDRESS (0x8<<1)
 #define USE_I2C
 #define TEST
-#define STLINK
+//#define STLINK
 
 uint8_t keys[20];
 uint8_t data[10];
@@ -369,6 +369,7 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
   int i,j,l,k,s;
   uint8_t code;
   if(len>=4 && data[0]=='s' && data[1]=='a'&& data[2]=='v'&& data[3]=='e'){
+    Log("layers size: %d\n\r",sizeof(layers));
     Log("writing conf to flash...\r\n");
     writeFlash();
     Log("done.\r\n");
@@ -390,49 +391,94 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
     k=atoi(dd); //key    
     Log(" side: %c layer: %d key: %d ",data[0],l,k);
     if(k>=0 && k <MAX_KEYS){
-      if(data[4]=='c'){
-        dd[0]=data[5];
-        dd[1]=data[6];
-        dd[2]='\0';
-        code=strtoul(dd, NULL, 16) & 0xff;
-        Log("code: %#02x\r\n",code);  
-        layers.side[s][l].keys[k]=code;
-        
-      }else if (data[4]=='m'){
-        for(j=0,i=5;i<len && j<20;j++,i++){
-          dd[j]=data[i];
-        }
-        dd[j]='\0';
-        Log("modif: %s\r\n",dd);
-        layers.side[s][l].keys[k]=DISABLED_KEY;
-        if(strcmp(dd,"LSHIFT")==0){
-          layers.side[s][l].lshift=k;
-        }
-        if(strcmp(dd,"RSHIFT")==0){
-          layers.side[s][l].rshift=k;
-        }
-        if(strcmp(dd,"LCTRL")==0){
-          layers.side[s][l].lctrl=k;
-        }
-        if(strcmp(dd,"RCTRL")==0){
-          layers.side[s][l].rctrl=k;
-        }
-        if(strcmp(dd,"LALT")==0){
-          layers.side[s][l].lalt=k;
-        }
-        if(strcmp(dd,"RALTL")==0){
-          layers.side[s][l].ralt=k;
-        }
-        if(strcmp(dd,"LMETA")==0){
-          layers.side[s][l].lmeta=k;
-        }
-        if(strcmp(dd,"RMETA")==0){
-          layers.side[s][l].rmeta=k;
-        }
 
-        if(strcmp(dd,"CMD")==0){
-          layers.state.layer_key=k;
-        }
+      switch(data[4])
+      {
+        case 'c':
+          {
+            dd[0]=data[5];
+            dd[1]=data[6];
+            dd[2]='\0';
+            code=strtoul(dd, NULL, 16) & 0xff;
+            Log("code: %#02x\r\n",code);  
+            layers.side[s][l].keys[k]=code;
+          }
+          break;
+        case 'p':
+          {
+            dd[0]=data[5];
+            dd[1]=data[6];
+            if(data[5]=='M'){
+              switch(data[6]){
+                case 'U':
+                  layers.side[s][l].mxu=k;
+                break;
+                case 'D':
+                  layers.side[s][l].mxd=k;
+                break;
+                case 'L':
+                  layers.side[s][l].mxl=k;
+                break;
+                case 'R':
+                  layers.side[s][l].mxr=k;
+                break;
+
+              }
+            }
+            /*if(len>=11){
+              dd[0]=data[5];
+              dd[1]=data[6];
+              dd[2]=data[7];
+              dd[3]='\0';
+              px=atoi(dd);
+              dd[0]=data[8];
+              dd[1]=data[9];
+              dd[2]=data[10];
+              dd[3]='\0';
+              py=atoi(dd);
+              Log("px %d py %d\r\n",px,py);
+
+            }*/
+          }
+          break;
+        case 'm':
+          {
+            for(j=0,i=5;i<len && j<20;j++,i++){
+              dd[j]=data[i];
+            }
+            dd[j]='\0';
+            Log("modif: %s\r\n",dd);
+            layers.side[s][l].keys[k]=DISABLED_KEY;
+            if(strcmp(dd,"LSHIFT")==0){
+              layers.side[s][l].lshift=k;
+            }
+            if(strcmp(dd,"RSHIFT")==0){
+              layers.side[s][l].rshift=k;
+            }
+            if(strcmp(dd,"LCTRL")==0){
+              layers.side[s][l].lctrl=k;
+            }
+            if(strcmp(dd,"RCTRL")==0){
+              layers.side[s][l].rctrl=k;
+            }
+            if(strcmp(dd,"LALT")==0){
+              layers.side[s][l].lalt=k;
+            }
+            if(strcmp(dd,"RALTL")==0){
+              layers.side[s][l].ralt=k;
+            }
+            if(strcmp(dd,"LMETA")==0){
+              layers.side[s][l].lmeta=k;
+            }
+            if(strcmp(dd,"RMETA")==0){
+              layers.side[s][l].rmeta=k;
+            }
+
+            if(strcmp(dd,"CMD")==0){
+              layers.state.layer_key=k;
+            }
+          }
+          break;
       }
     }
   }

@@ -33,9 +33,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
 /* USER CODE BEGIN INCLUDE */
-
+#include "../../bluepill_utils/utils.h"
 //#include "variant.h"
-/* USER CODE END INCLUDE */
+/* USER CODE END INCLUDE */	
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -256,33 +256,38 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 {
-  /* USER CODE BEGIN 6 */
-    /* Four byte is the magic pack "1EAF" that puts the MCU into bootloader. */
+	/* USER CODE BEGIN 6 */
+	/* Four byte is the magic pack "1EAF" that puts the MCU into bootloader. */
 	if(*Len >= 4){
 		/**
 		 * Check if the incoming contains the string "1EAF".
 		 * If yes, check if the DTR has been set, to put the MCU into the bootloader mode.
 		 */
-		if(dtr_pin > 3)
-    {
-      if((Buf[0] == '1')&&(Buf[1] == 'E')&&(Buf[2] == 'A')&&(Buf[3] == 'F')){
-        HAL_NVIC_SystemReset();
-      }
-      dtr_pin = 0;
+		//	if(dtr_pin > 3)
+		{
+			if(
+			(Buf[0] == '1')&&(Buf[1] == 'E')&&(Buf[2] == 'A')&&(Buf[3] == 'F') &&
+			(Buf[4] == '1')&&(Buf[5] == 'E')&&(Buf[6] == 'A')&&(Buf[7] == 'F')
+			){
+				set_reboot(1);
+					
+				//HAL_NVIC_SystemReset();
+			}
+			dtr_pin = 0;
 		}
-  }
+	}
 
 	uint16_t len = *Len;
-  
-    USBSerial_Rx_Handler((uint8_t *)&Buf[0], len);
 
-    USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+	USBSerial_Rx_Handler((uint8_t *)&Buf[0], len);
 
-  //USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  //USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-  //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-  return (USBD_OK);
-  /* USER CODE END 6 */
+	USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
+	//USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+	//USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+	//HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	return (USBD_OK);
+	/* USER CODE END 6 */
 }
 
 /**

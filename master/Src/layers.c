@@ -1,5 +1,5 @@
 #include "layers.h"
-
+#include "mouse.h"
 void readFlash(void);
 
 layers_t layers;
@@ -28,6 +28,24 @@ void init_layers(){
   keyboard_setModifiers(0);
 }
 static uint8_t modifier=0;
+
+uint8_t is_mouse(uint8_t side,uint8_t code,uint8_t l,uint8_t press){
+  uint8_t ret=0;
+  if(code==layers.side[side][l].mxu){
+    mouse_move(0, -1, 0); 
+    ret=1;
+  }else if(code==layers.side[side][l].mxd){
+    mouse_move(0, 1, 0); 
+    ret=1;
+  }else if(code==layers.side[side][l].mxl){
+    mouse_move(-1, 0, 0); 
+    ret=1;
+  }else if(code==layers.side[side][l].mxr){
+    mouse_move(1, 0, 0); 
+    ret=1;
+  }
+  return ret;
+}
 
 uint8_t is_modifier(uint8_t side,uint8_t code,uint8_t l,uint8_t press){
   uint8_t mod=1;
@@ -80,6 +98,7 @@ uint8_t is_modifier(uint8_t side,uint8_t code,uint8_t l,uint8_t press){
 }
 
 void send_event(uint8_t side,uint8_t code,uint8_t press){  
+
   Log("press: %d key: %d code: %#02x\n\r",press,code,layers.side[side][layers.state.curr[side]].keys[code]);
   if(layers.state.command_mode){
     if(code==layers.state.layer_key){
@@ -98,6 +117,9 @@ void send_event(uint8_t side,uint8_t code,uint8_t press){
   }
 }
 void sendkey(uint8_t side,uint8_t code,uint8_t press){
+  
+  is_mouse(side,code,layers.state.curr[side],press);
+
   if(is_modifier(side,code,layers.state.curr[side],press)){
     keyboard_setModifiers(modifier);
     if(press){
@@ -116,6 +138,7 @@ void sendkey(uint8_t side,uint8_t code,uint8_t press){
   }
 }
 void process_commands(uint8_t side,uint8_t code,uint8_t press){
+  char curr_l;
   switch(layers.side[side][0].keys[code]){
     case NEXT_LAYER: //increments both layers
     if(layers.state.curr[RIGHT]<MAX_LAYERS-1){
@@ -137,6 +160,9 @@ void process_commands(uint8_t side,uint8_t code,uint8_t press){
     //TODO: implement all commands
     //
     default:
+      curr_l=layers.state.curr[side];
+      layers.state.curr[side]=0;
       sendkey(side,code,press);
+      layers.state.curr[side]=curr_l;
   }
 }

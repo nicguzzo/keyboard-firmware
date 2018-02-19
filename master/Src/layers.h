@@ -17,6 +17,10 @@ typedef struct{
   uint8_t rshift;
   uint8_t ralt;
   uint8_t rmeta;
+  uint8_t mxu;
+  uint8_t mxd;
+  uint8_t mxl;
+  uint8_t mxr;
 }layer_t;
 
 typedef struct {
