@@ -76,7 +76,7 @@ UART_HandleTypeDef huart1;
 #define I2C_ADDRESS (0x8<<1)
 #define USE_I2C
 #define TEST
-//#define STLINK
+#define STLINK
 
 uint8_t keys[20];
 uint8_t data[10];
@@ -430,9 +430,9 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
           layers.side[s][l].rmeta=k;
         }
 
-        //if(strcmp(dd,"CMD")==0){
-          //layer_state.layer_key=k;
-        //}
+        if(strcmp(dd,"CMD")==0){
+          layers.state.layer_key=k;
+        }
       }
     }
   }

@@ -4,7 +4,8 @@ void readFlash(void);
 
 layers_t layers;
 
-void process_commands(uint16_t code);
+void sendkey(uint8_t side,uint8_t code,uint8_t press);
+void process_commands(uint8_t side,uint8_t code,uint8_t press);
 
 void init_layers(){
   //int i,j;
@@ -85,35 +86,37 @@ void send_event(uint8_t side,uint8_t code,uint8_t press){
       layers.state.command_mode=0; //go back to normal    
       Log("leaving command mode\r\n");
     }else{      
-      process_commands(layers.side[side][0].keys[code]);
+      process_commands(side,code,press);
     }
   }else{
     if(code==layers.state.layer_key){
       Log("entering command mode\r\n");
       layers.state.command_mode=1; // go to command mode
     }else{
-      if(is_modifier(side,code,layers.state.curr[side],press)){
-        keyboard_setModifiers(modifier);
-        if(press){
-          keyboard_pressScanCode(0);
-        }else{
-          keyboard_releaseScanCode(0);
-        }
-      }else{
-        if(layers.side[side][layers.state.curr[side]].keys[code]!= DISABLED_KEY){
-          if(press){
-            keyboard_pressScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
-          }else{
-            keyboard_releaseScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
-          }    
-        }
-      }      
+      sendkey(side,code,press);           
     }
   }
 }
-
-void process_commands(uint16_t code){
-  switch(code){
+void sendkey(uint8_t side,uint8_t code,uint8_t press){
+  if(is_modifier(side,code,layers.state.curr[side],press)){
+    keyboard_setModifiers(modifier);
+    if(press){
+      keyboard_pressScanCode(0);
+    }else{
+      keyboard_releaseScanCode(0);
+    }
+  }else{
+    if(layers.side[side][layers.state.curr[side]].keys[code]!= DISABLED_KEY){
+      if(press){
+        keyboard_pressScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
+      }else{
+        keyboard_releaseScanCode(layers.side[side][layers.state.curr[side]].keys[code]);
+      }    
+    }
+  }
+}
+void process_commands(uint8_t side,uint8_t code,uint8_t press){
+  switch(layers.side[side][0].keys[code]){
     case NEXT_LAYER: //increments both layers
     if(layers.state.curr[RIGHT]<MAX_LAYERS-1){
       layers.state.curr[RIGHT]++;
@@ -133,5 +136,7 @@ void process_commands(uint16_t code){
     //..
     //TODO: implement all commands
     //
+    default:
+      sendkey(side,code,press);
   }
 }
