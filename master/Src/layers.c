@@ -15,7 +15,8 @@ void init_layers(){
     layers.state.command_mode=0;
     layers.state.curr[LEFT]=1;
     layers.state.curr[RIGHT]=1;
-    layers.state.layer_key=27;
+    layers.state.cmd_key=24;
+    layers.state.cmd_key_side=0;
   }
 
   //disable all keys by default
@@ -31,16 +32,16 @@ static uint8_t modifier=0;
 
 uint8_t is_mouse(uint8_t side,uint8_t code,uint8_t l,uint8_t press){
   uint8_t ret=0;
-  if(code==layers.side[side][l].mxu){
+  if(code==layers.side[side][l].mu){
     mouse_move(0, -1, 0); 
     ret=1;
-  }else if(code==layers.side[side][l].mxd){
+  }else if(code==layers.side[side][l].md){
     mouse_move(0, 1, 0); 
     ret=1;
-  }else if(code==layers.side[side][l].mxl){
+  }else if(code==layers.side[side][l].ml){
     mouse_move(-1, 0, 0); 
     ret=1;
-  }else if(code==layers.side[side][l].mxr){
+  }else if(code==layers.side[side][l].mr){
     mouse_move(1, 0, 0); 
     ret=1;
   }
@@ -101,14 +102,14 @@ void send_event(uint8_t side,uint8_t code,uint8_t press){
 
   Log("press: %d key: %d code: %#02x\n\r",press,code,layers.side[side][layers.state.curr[side]].keys[code]);
   if(layers.state.command_mode){
-    if(code==layers.state.layer_key){
+    if(code==layers.state.cmd_key && layers.state.cmd_key_side ==side){
       layers.state.command_mode=0; //go back to normal    
       Log("leaving command mode\r\n");
     }else{      
       process_commands(side,code,press);
     }
   }else{
-    if(code==layers.state.layer_key){
+    if(code==layers.state.cmd_key){
       Log("entering command mode\r\n");
       layers.state.command_mode=1; // go to command mode
     }else{

@@ -299,12 +299,18 @@ int main(void)
       for(j=4;j>=0;j--){
         k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
         kk=(4-j)*6+i;
-        if(k==1 && keys_master[kk]==0){                    
-          send_event(RIGHT,kk,1);
-        }
-        if(k==0 && keys_master[kk]==1){          
-          send_event(RIGHT,kk,0);
-        }
+        
+        //if(mouse){
+          //mouse
+        //}else{
+          if(k==1 && keys_master[kk]==0){                    
+            send_event(RIGHT,kk,1);
+          }
+          if(k==0 && keys_master[kk]==1){          
+            send_event(RIGHT,kk,0);
+          }
+        //}
+
         keys_master[kk]=k;
       }  
       HAL_GPIO_WritePin(GPIOB,GPIO_PIN_3<<i,1);    
@@ -411,16 +417,16 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
             if(data[5]=='M'){
               switch(data[6]){
                 case 'U':
-                  layers.side[s][l].mxu=k;
+                  layers.side[s][l].mu=k;
                 break;
                 case 'D':
-                  layers.side[s][l].mxd=k;
+                  layers.side[s][l].md=k;
                 break;
                 case 'L':
-                  layers.side[s][l].mxl=k;
+                  layers.side[s][l].ml=k;
                 break;
                 case 'R':
-                  layers.side[s][l].mxr=k;
+                  layers.side[s][l].mr=k;
                 break;
 
               }
@@ -475,7 +481,8 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
             }
 
             if(strcmp(dd,"CMD")==0){
-              layers.state.layer_key=k;
+              layers.state.cmd_key=k;
+              layers.state.cmd_key_side=s;
             }
           }
           break;

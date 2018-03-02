@@ -17,16 +17,17 @@ typedef struct{
   uint8_t rshift;
   uint8_t ralt;
   uint8_t rmeta;
-  uint8_t mxu;
-  uint8_t mxd;
-  uint8_t mxl;
-  uint8_t mxr;
+  uint8_t mu;
+  uint8_t md;
+  uint8_t ml;
+  uint8_t mr;
 }layer_t;
 
 typedef struct {
   uint8_t curr[2];
   uint8_t command_mode;
-  uint8_t layer_key;
+  uint8_t cmd_key;
+  uint8_t cmd_key_side;
 }layer_state_t;
 
 typedef struct{
