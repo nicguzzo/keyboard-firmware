@@ -16,64 +16,68 @@ void init_layers(){
       layers.layer[i].keys[j]=DISABLED_KEY;
     }
   }
-  
+
   readFlash();
   layers.mode=0;
   layers.current_layer=1;
-   
+
   keyboard_setModifiers(0);
 }
 static uint8_t modifier=0;
 
 void is_mouse(uint8_t code,uint8_t press)
 {
-  
-  static int8_t incu=0;
-  static int8_t incd=0;  
-  static int8_t incl=0;
-  static int8_t incr=0;
+
+  static int8_t incu=1;
+  static int8_t incd=1;
+  static int8_t incl=1;
+  static int8_t incr=1;
 
   //TODO: make MAX_INC a variable with conf settings??
-  #define MAX_INC 30
-  
-  if(layers.mode){ 
-    
-    if(press){      
-      if(code==layers.mu){        
+  #define MAX_INC 60
+
+  if(layers.mode){
+
+    if(press){
+      if(code==layers.mu){
         if(incu<MAX_INC)
-          incu++;
+          //incu++;
+          incu*=2;
         incy=-incu;
       }
       if(code==layers.md){
         if(incd<MAX_INC)
-          incd++;
+          //incd++;
+          incd*=2;
         incy=incd;
-      }      
+      }
       if(code==layers.ml){
         if(incl<MAX_INC)
-          incl++;
+          //incl++;
+          incl*=2;
         incx=-incl;
       }
       if(code==layers.mr){
         if(incr<MAX_INC)
-          incr++;
+          //incr++;
+          incr*=2;
         incx=incr;
       }
     }else{
       if(code==layers.mu){
-       incu=0;
+        incu=1;
       }
-      if(code==layers.md){        
-        incd=0;
-      }      
-      if(code==layers.ml){        
-        incl=0;
+      if(code==layers.md){
+        incd=1;
       }
-      if(code==layers.mr){        
-        incr=0;
+      if(code==layers.ml){
+        incl=1;
+      }
+      if(code==layers.mr){
+        incr=1;
       }
     }
-    
+
   }
 }
 
@@ -121,19 +125,19 @@ uint8_t is_modifier(uint8_t code,uint8_t press){
     else
       modifier&=~KEY_MOD_RMETA;
   }else{
-    mod=0;    
+    mod=0;
   }
 
   return mod;
 }
 
-void send_event(uint8_t code,uint8_t press){  
-  
+void send_event(uint8_t code,uint8_t press){
+
   if(layers.mode){//command mode, layer 0
     if(code==layers.cmd_key){
-      layers.mode=0; //go back to normal    
+      layers.mode=0; //go back to normal
       Log1("leaving command mode\r\n");
-    }else{      
+    }else{
       process_commands(code,press);
     }
   }else{
@@ -141,12 +145,12 @@ void send_event(uint8_t code,uint8_t press){
       Log1("entering command mode\r\n");
       layers.mode=1; // go to command mode
     }else{
-      sendkey(code,press);           
+      sendkey(code,press);
     }
   }
 }
 void sendkey(uint8_t code,uint8_t press){
-  
+
   //is_mouse(code,press);
   Log1("press: %d key: %d code: %#02x current_layer %d\n\r",
     press,
@@ -167,7 +171,7 @@ void sendkey(uint8_t code,uint8_t press){
         keyboard_pressScanCode(layers.layer[layers.current_layer].keys[code]);
       }else{
         keyboard_releaseScanCode(layers.layer[layers.current_layer].keys[code]);
-      }    
+      }
     }
   }
 }
@@ -175,10 +179,10 @@ void process_commands(uint8_t code,uint8_t press){
   uint8_t curr_l;
   switch(layers.layer[0].keys[code]){
     case NEXT_LAYER:
-    
+
     break;
     case PREV_LAYER:
-    
+
     break;
     //..
     //TODO: implement all commands
