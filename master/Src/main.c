@@ -126,9 +126,18 @@ void Log(const char* fmt, ...)
   va_start(va, fmt);
   vsnprintf(tmp, 127, fmt, va);      
   va_end(va);
-  HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+ // HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+  CDC_Transmit_FS((uint8_t*)tmp,strlen(tmp));
 }
 #endif
+void Log1(const char* fmt, ...)
+{
+  va_list va;    
+  va_start(va, fmt);
+  vsnprintf(tmp, 127, fmt, va);      
+  va_end(va);
+  HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
+}
 #define flashAddress 0x8000000
 uint32_t saveAddress =flashAddress+(1024*64); // last page
 
@@ -167,9 +176,9 @@ void writeFlash(void)
     show_hal_error("HAL_FLASHEx_Erase",stat);
   }
   if(PageError == 0xFFFFFFFF){
-    Log("erase ok.\r\n");
+    Log1("erase ok.\r\n");
   }else{
-    Log("erase failed at dir %#x.\r\n",PageError);
+    Log1("erase failed at dir %#x.\r\n",PageError);
   }
   for(i=0,j=0; i<mSize_16; i++,j+=2){
     stat=HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,saveAddress+j,layers_16[i]);
@@ -188,13 +197,13 @@ void writeFlash(void)
 void readFlash(void)
 {
   uint32_t i;
-  Log("Reading conf from flash.\r\n");
+  Log1("Reading conf from flash.\r\n");
   uint8_t* saved=(uint8_t*)saveAddress;
   for(i=0; i<mSize; i++){
     layers_8[i] = saved[i];
-    //Log("%#02x  %#02x \r\n",layers_8[i],saved[i]);
+    Log1("%#02x\r\n",layers_8[i]);
   }
-  Log("done.\r\n");
+  Log1("done.\r\n");
 }
 /* USER CODE END 0 */
 
@@ -282,7 +291,7 @@ int main(void)
     HAL_Delay(200);
   }
 #endif
-  Log("conf size: %d bytes\r\n",mSize);
+  Log1("conf size: %d bytes\r\n",mSize);
   
   init_layers();
   set_rgb(0,65535,0);
@@ -299,15 +308,17 @@ int main(void)
       for(j=4;j>=0;j--){
         k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
         kk=(4-j)*6+i;
-        
+          if(k==1){
+            is_mouse(kk+30);
+          }
         //if(mouse){
           //mouse
         //}else{
           if(k==1 && keys_master[kk]==0){                    
-            send_event(RIGHT,kk,1);
+            send_event(kk+30,1);
           }
           if(k==0 && keys_master[kk]==1){          
-            send_event(RIGHT,kk,0);
+            send_event(kk+30,0);
           }
         //}
 
@@ -334,11 +345,13 @@ int main(void)
             
             k=((keys[i]>>j) & 0x1);
             kk=(j*6+i);
+            if(k==1)
+              is_mouse(kk);
             if(k==1 && keys_slave[kk]==0){              
-              send_event(LEFT,kk,1);
+              send_event(kk,1);
             }
             if(k==0 && keys_slave[kk]==1){              
-              send_event(LEFT,kk,0);
+              send_event(kk,0);
             }
             keys_slave[kk]=k;
           }  
@@ -368,17 +381,29 @@ int main(void)
 }
 
 void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
-  Log("cmd: \r\n");
-  HAL_UART_Transmit(&huart1,data,len,500);
-  Log("\r\n");
+  //Log("cmd: \r\n");
+  //HAL_UART_Transmit(&huart1,data,len,500);
+  //Log("\r\n");
   char dd[20];
   int i,j,l,k,s;
   uint8_t code;
   if(len>=4 && data[0]=='s' && data[1]=='a'&& data[2]=='v'&& data[3]=='e'){
-    Log("layers size: %d\n\r",sizeof(layers));
-    Log("writing conf to flash...\r\n");
+    //Log("layers size: %d\n\r",sizeof(layers));
+    //Log("writing conf to flash...\r\n");
     writeFlash();
-    Log("done.\r\n");
+    //Log("done.\r\n");
+    return;
+  }
+  if(len>=5 && data[0]=='d' && data[1]=='u'&& data[2]=='m'&& data[3]=='p'){
+    dd[0]=data[4];    
+    dd[1]='\0';
+    l=atoi(dd);
+    if(l>=0 && l<MAX_LAYERS){
+      for(j=0;j<MAX_KEYS;j++){
+        Log1("layer: %d key: %d code: %#02x\r\n",l,j,layers.layer[l].keys[j]);   
+      }
+    }
+    return;
   }
   // r1
   if(len>=6 && (data[0]=='r'||data[0]=='l')){    
@@ -395,7 +420,9 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
     dd[1]=data[3];
     dd[2]='\0';
     k=atoi(dd); //key    
-    Log(" side: %c layer: %d key: %d ",data[0],l,k);
+    if(s==RIGHT) 
+      k+=30;
+
     if(k>=0 && k <MAX_KEYS){
 
       switch(data[4])
@@ -406,8 +433,8 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
             dd[1]=data[6];
             dd[2]='\0';
             code=strtoul(dd, NULL, 16) & 0xff;
-            Log("code: %#02x\r\n",code);  
-            layers.side[s][l].keys[k]=code;
+            Log1("side: %c layer: %d key: %d code: %#02x\r\n",data[0],l,k,code);             
+            layers.layer[l].keys[k]=code;            
           }
           break;
         case 'p':
@@ -417,16 +444,16 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
             if(data[5]=='M'){
               switch(data[6]){
                 case 'U':
-                  layers.side[s][l].mu=k;
+                  layers.mu=k;
                 break;
                 case 'D':
-                  layers.side[s][l].md=k;
+                  layers.md=k;
                 break;
                 case 'L':
-                  layers.side[s][l].ml=k;
+                  layers.ml=k;
                 break;
                 case 'R':
-                  layers.side[s][l].mr=k;
+                  layers.mr=k;
                 break;
 
               }
@@ -453,36 +480,35 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
               dd[j]=data[i];
             }
             dd[j]='\0';
-            Log("modif: %s\r\n",dd);
-            layers.side[s][l].keys[k]=DISABLED_KEY;
+            //Log("modif: %s\r\n",dd);
+            layers.layer[l].keys[k]=DISABLED_KEY;
             if(strcmp(dd,"LSHIFT")==0){
-              layers.side[s][l].lshift=k;
+              layers.lshift=k;
             }
             if(strcmp(dd,"RSHIFT")==0){
-              layers.side[s][l].rshift=k;
+              layers.rshift=k;
             }
             if(strcmp(dd,"LCTRL")==0){
-              layers.side[s][l].lctrl=k;
+              layers.lctrl=k;
             }
             if(strcmp(dd,"RCTRL")==0){
-              layers.side[s][l].rctrl=k;
+              layers.rctrl=k;
             }
             if(strcmp(dd,"LALT")==0){
-              layers.side[s][l].lalt=k;
+              layers.lalt=k;
             }
             if(strcmp(dd,"RALTL")==0){
-              layers.side[s][l].ralt=k;
+              layers.ralt=k;
             }
             if(strcmp(dd,"LMETA")==0){
-              layers.side[s][l].lmeta=k;
+              layers.lmeta=k;
             }
             if(strcmp(dd,"RMETA")==0){
-              layers.side[s][l].rmeta=k;
+              layers.rmeta=k;
             }
 
             if(strcmp(dd,"CMD")==0){
-              layers.state.cmd_key=k;
-              layers.state.cmd_key_side=s;
+              layers.cmd_key=k;              
             }
           }
           break;

@@ -6,7 +6,7 @@
 #include "usb_key_scancodes.h"
 
 void Log(const char* fmt, ...);
-
+void Log1(const char* fmt, ...);
 #define MODIFIER_SHIFT 0x02
 
 #define IS_KEY_CODE 0x80

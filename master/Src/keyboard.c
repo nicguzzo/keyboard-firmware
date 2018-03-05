@@ -53,7 +53,7 @@ void keyboard_sendReport() {
     keyboard.report[0] = keyboard.device.HIDReportID;
     if(dolog){
         dolog=0;
-        Log("mod: %#x keys: [%#x %#x %#x %#x %#x %#x]\r\n",keyboard.report[1],keyboard.report[3],keyboard.report[4],keyboard.report[5],keyboard.report[6],keyboard.report[7],keyboard.report[8]);
+        //Log("mod: %#x keys: [%#x %#x %#x %#x %#x %#x]\r\n",keyboard.report[1],keyboard.report[3],keyboard.report[4],keyboard.report[5],keyboard.report[6],keyboard.report[7],keyboard.report[8]);
     }
     
     

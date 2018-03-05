@@ -3,13 +3,17 @@
 #include "keyboard.h"
 
 #define MAX_LAYERS 8
-#define MAX_KEYS 32
+#define MAX_KEYS 64
 #define DISABLED_KEY 0xff
 #define LEFT 0
 #define RIGHT 1
 typedef struct{
-  uint8_t keys[MAX_KEYS];
-  uint8_t lctrl;
+  uint8_t keys[MAX_KEYS];  
+}layer_t;
+
+typedef struct{
+  layer_t layer[MAX_LAYERS];
+  uint8_t lctrl; //modifiers are fixed for all layers
   uint8_t lshift;
   uint8_t lalt;
   uint8_t lmeta;
@@ -17,28 +21,19 @@ typedef struct{
   uint8_t rshift;
   uint8_t ralt;
   uint8_t rmeta;
-  uint8_t mu;
+  uint8_t mu; //mouse
   uint8_t md;
   uint8_t ml;
   uint8_t mr;
-}layer_t;
-
-typedef struct {
-  uint8_t curr[2];
-  uint8_t command_mode;
-  uint8_t cmd_key;
-  uint8_t cmd_key_side;
-}layer_state_t;
-
-typedef struct{
-  layer_t side[2][MAX_LAYERS];
-  
-  layer_state_t state;
+  uint8_t current_layer;
+  uint8_t mode; //0 =normal 1= cmd
+  uint8_t cmd_key;  
 }layers_t;
 
 void init_layers();
 
-void send_event(uint8_t side,uint8_t code,uint8_t press);
+void send_event(uint8_t code,uint8_t press);
+void is_mouse(uint8_t code);
 
 enum {
   NEXT_LAYER=0,
