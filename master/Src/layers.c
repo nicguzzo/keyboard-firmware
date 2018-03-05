@@ -3,7 +3,8 @@
 void readFlash(void);
 
 layers_t layers;
-
+int8_t incx=0;
+int8_t incy=0;
 void sendkey(uint8_t code,uint8_t press);
 void process_commands(uint8_t code,uint8_t press);
 
@@ -24,19 +25,55 @@ void init_layers(){
 }
 static uint8_t modifier=0;
 
-void is_mouse(uint8_t code)
+void is_mouse(uint8_t code,uint8_t press)
 {
-  if(layers.mode){
-    Log1("%d\r\n",code);
-    if(code==layers.mu){
-      mouse_move(0, -1, 0); 
-    }else if(code==layers.md){
-      mouse_move(0, 1, 0); 
-    }else if(code==layers.ml){
-      mouse_move(-1, 0, 0);
-    }else if(code==layers.mr){
-      mouse_move(1, 0, 0); 
+  
+  static int8_t incu=0;
+  static int8_t incd=0;  
+  static int8_t incl=0;
+  static int8_t incr=0;
+
+  //TODO: make MAX_INC a variable with conf settings??
+  #define MAX_INC 30
+  
+  if(layers.mode){ 
+    
+    if(press){      
+      if(code==layers.mu){        
+        if(incu<MAX_INC)
+          incu++;
+        incy=-incu;
+      }
+      if(code==layers.md){
+        if(incd<MAX_INC)
+          incd++;
+        incy=incd;
+      }      
+      if(code==layers.ml){
+        if(incl<MAX_INC)
+          incl++;
+        incx=-incl;
+      }
+      if(code==layers.mr){
+        if(incr<MAX_INC)
+          incr++;
+        incx=incr;
+      }
+    }else{
+      if(code==layers.mu){
+       incu=0;
+      }
+      if(code==layers.md){        
+        incd=0;
+      }      
+      if(code==layers.ml){        
+        incl=0;
+      }
+      if(code==layers.mr){        
+        incr=0;
+      }
     }
+    
   }
 }
 
@@ -91,7 +128,6 @@ uint8_t is_modifier(uint8_t code,uint8_t press){
 }
 
 void send_event(uint8_t code,uint8_t press){  
-
   
   if(layers.mode){//command mode, layer 0
     if(code==layers.cmd_key){
@@ -136,7 +172,7 @@ void sendkey(uint8_t code,uint8_t press){
   }
 }
 void process_commands(uint8_t code,uint8_t press){
-  char curr_l;
+  uint8_t curr_l;
   switch(layers.layer[0].keys[code]){
     case NEXT_LAYER:
     

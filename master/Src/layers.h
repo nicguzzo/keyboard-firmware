@@ -27,13 +27,14 @@ typedef struct{
   uint8_t mr;
   uint8_t current_layer;
   uint8_t mode; //0 =normal 1= cmd
-  uint8_t cmd_key;  
+  uint8_t cmd_key;
+  uint8_t padding;// padding for 2 byte aligned structure   
 }layers_t;
 
 void init_layers();
 
 void send_event(uint8_t code,uint8_t press);
-void is_mouse(uint8_t code);
+void is_mouse(uint8_t code,uint8_t press);
 
 enum {
   NEXT_LAYER=0,
@@ -68,6 +69,8 @@ enum {
   LAYER_8_H
 };
 
+extern int8_t incx;
+extern int8_t incy;
 extern layers_t layers;
 
 

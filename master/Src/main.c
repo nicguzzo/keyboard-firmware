@@ -139,7 +139,7 @@ void Log1(const char* fmt, ...)
   HAL_UART_Transmit(&huart1,(uint8_t*)tmp,strlen(tmp),500);
 }
 #define flashAddress 0x8000000
-uint32_t saveAddress =flashAddress+(1024*64); // last page
+uint32_t saveAddress =flashAddress+(1024*63); // last page
 
 uint8_t *layers_8=(uint8_t *)&layers;
 uint16_t *layers_16=(uint16_t *)&layers;
@@ -308,19 +308,13 @@ int main(void)
       for(j=4;j>=0;j--){
         k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
         kk=(4-j)*6+i;
-          if(k==1){
-            is_mouse(kk+30);
-          }
-        //if(mouse){
-          //mouse
-        //}else{
-          if(k==1 && keys_master[kk]==0){                    
-            send_event(kk+30,1);
-          }
-          if(k==0 && keys_master[kk]==1){          
-            send_event(kk+30,0);
-          }
-        //}
+        is_mouse(kk+30,k);
+        if(k==1 && keys_master[kk]==0){                    
+          send_event(kk+30,1);
+        }
+        if(k==0 && keys_master[kk]==1){          
+          send_event(kk+30,0);
+        }
 
         keys_master[kk]=k;
       }  
@@ -345,8 +339,8 @@ int main(void)
             
             k=((keys[i]>>j) & 0x1);
             kk=(j*6+i);
-            if(k==1)
-              is_mouse(kk);
+            
+            is_mouse(kk,k);
             if(k==1 && keys_slave[kk]==0){              
               send_event(kk,1);
             }
@@ -371,10 +365,18 @@ int main(void)
       }
     }
 #endif
+
+    if(incx!=0 || incy!=0){
+      Log1("incx=%d incy=%d\r\n",incx,incy);
+      mouse_move(incx, incy, 0);        
+    }      
+    incx=0;
+    incy=0;
     //set_rgb(rand()>>16,rand()>>16,rand()>>16);
     keyboard_sendReport();
     //key debounce
     HAL_Delay(5);
+
   }
   /* USER CODE END 3 */
 
@@ -395,6 +397,7 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
     return;
   }
   if(len>=5 && data[0]=='d' && data[1]=='u'&& data[2]=='m'&& data[3]=='p'){
+    Log1("cmd_key: %d \r\n",layers.cmd_key); 
     dd[0]=data[4];    
     dd[1]='\0';
     l=atoi(dd);
