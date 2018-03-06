@@ -25,14 +25,14 @@ void init_layers(){
 }
 static uint8_t modifier=0;
 
-void is_mouse(uint8_t code,uint8_t press)
+uint8_t is_mouse(uint8_t code,uint8_t press)
 {
-
+  int8_t r=0;
   static int8_t incu=1;
   static int8_t incd=1;
   static int8_t incl=1;
   static int8_t incr=1;
-
+  static int8_t _mb[5]={0,0,0,0,0};
   //TODO: make MAX_INC a variable with conf settings??
   #define MAX_INC 60
 
@@ -44,25 +44,57 @@ void is_mouse(uint8_t code,uint8_t press)
           //incu++;
           incu*=2;
         incy=-incu;
+        r=1;
       }
       if(code==layers.md){
         if(incd<MAX_INC)
           //incd++;
           incd*=2;
         incy=incd;
+        r=1;
       }
       if(code==layers.ml){
         if(incl<MAX_INC)
           //incl++;
           incl*=2;
         incx=-incl;
+        r=1;
       }
       if(code==layers.mr){
         if(incr<MAX_INC)
           //incr++;
           incr*=2;
         incx=incr;
+        r=1;
       }
+      if(code==layers.mb1){
+        if (!_mb[0]){
+          _mb[0]=1;
+          mouse_press(1);
+          r=1;
+        }
+      }else if(code==layers.mb2){
+        if (!_mb[1]){
+          _mb[1]=1;
+          mouse_press(2);
+          r=1;
+        }
+      }/*else if(code==layers.mb3){
+        if (!_mb[2]){
+          _mb[2]=1;
+          mouse_press(3);
+        }
+      }else if(code==layers.mb4){
+        if (!_mb[3]){
+          _mb[3]=1;
+          mouse_press(3);
+        }
+      }else if(code==layers.mb5){
+        if (!_mb[4]){
+          _mb[4]=1;
+          mouse_press(5);
+        }
+      }*/
     }else{
       if(code==layers.mu){
         incu=1;
@@ -76,9 +108,39 @@ void is_mouse(uint8_t code,uint8_t press)
       if(code==layers.mr){
         incr=1;
       }
+      if(code==layers.mb1){
+        if (_mb[0]){
+          _mb[0]=0;
+          mouse_release(1);
+          r=1;
+        }
+      }else if(code==layers.mb2){
+        if (_mb[1]){
+          _mb[1]=0;
+          mouse_release(2);
+          r=1;
+        }
+      }/*else if(code==layers.mb3){
+        if (_mb[2]){
+          _mb[2]=0;
+          mouse_release(3);
+        }
+      }else if(code==layers.mb4){
+        if (_mb[3]){
+          _mb[
+          3]=0;
+          mouse_release(4);
+        }
+      }else if(code==layers.mb5){
+        if(_mb[4]){
+          _mb[4]=0;
+          mouse_release(5);
+        }
+      }*/
     }
 
   }
+  return r;
 }
 
 uint8_t is_modifier(uint8_t code,uint8_t press){

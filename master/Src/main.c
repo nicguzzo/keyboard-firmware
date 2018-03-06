@@ -308,12 +308,13 @@ int main(void)
       for(j=4;j>=0;j--){
         k=!HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3<<j);
         kk=(4-j)*6+i;
-        is_mouse(kk+30,k);
-        if(k==1 && keys_master[kk]==0){                    
-          send_event(kk+30,1);
-        }
-        if(k==0 && keys_master[kk]==1){          
-          send_event(kk+30,0);
+        if(!is_mouse(kk+30,k)){
+          if(k==1 && keys_master[kk]==0){                    
+            send_event(kk+30,1);
+          }
+          if(k==0 && keys_master[kk]==1){          
+            send_event(kk+30,0);
+          }
         }
 
         keys_master[kk]=k;
@@ -340,12 +341,13 @@ int main(void)
             k=((keys[i]>>j) & 0x1);
             kk=(j*6+i);
             
-            is_mouse(kk,k);
-            if(k==1 && keys_slave[kk]==0){              
-              send_event(kk,1);
-            }
-            if(k==0 && keys_slave[kk]==1){              
-              send_event(kk,0);
+            if(!is_mouse(kk,k)){
+              if(k==1 && keys_slave[kk]==0){              
+                send_event(kk,1);
+              }
+              if(k==0 && keys_slave[kk]==1){              
+                send_event(kk,0);
+              }
             }
             keys_slave[kk]=k;
           }  
@@ -367,7 +369,7 @@ int main(void)
 #endif
 
     if(incx!=0 || incy!=0){
-      Log1("incx=%d incy=%d\r\n",incx,incy);
+      //Log1("incx=%d incy=%d\r\n",incx,incy);
       mouse_move(incx, incy, 0);        
     }      
     incx=0;
@@ -458,6 +460,25 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
                 case 'R':
                   layers.mr=k;
                 break;
+                case 'B':
+                  switch(data[7]){
+                    case '1':
+                      layers.mb1=k;
+                    break;
+                    case '2':
+                      layers.mb2=k;
+                    break;
+                    case '3':
+                      layers.mb3=k;
+                    break;
+                    case '4':
+                      layers.mb4=k;
+                    break;
+                    case '5':
+                      layers.mb5=k;
+                    break;
+                  }  
+                break;
 
               }
             }
@@ -500,7 +521,7 @@ void USBSerial_Rx_Handler(uint8_t *data, uint16_t len){
             if(strcmp(dd,"LALT")==0){
               layers.lalt=k;
             }
-            if(strcmp(dd,"RALTL")==0){
+            if(strcmp(dd,"RALT")==0){
               layers.ralt=k;
             }
             if(strcmp(dd,"LMETA")==0){
