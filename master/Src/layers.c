@@ -3,6 +3,7 @@
 void readFlash(void);
 
 layers_t layers;
+static int8_t tmplayer[MAX_KEYS];
 int8_t incx=0;
 int8_t incy=0;
 void sendkey(uint8_t code,uint8_t press);
@@ -79,7 +80,7 @@ uint8_t is_mouse(uint8_t code,uint8_t press)
           mouse_press(2);
           r=1;
         }
-      }/*else if(code==layers.mb3){
+      }else if(code==layers.mb3){
         if (!_mb[2]){
           _mb[2]=1;
           mouse_press(3);
@@ -94,7 +95,7 @@ uint8_t is_mouse(uint8_t code,uint8_t press)
           _mb[4]=1;
           mouse_press(5);
         }
-      }*/
+      }
     }else{
       if(code==layers.mu){
         incu=1;
@@ -120,7 +121,7 @@ uint8_t is_mouse(uint8_t code,uint8_t press)
           mouse_release(2);
           r=1;
         }
-      }/*else if(code==layers.mb3){
+      }else if(code==layers.mb3){
         if (_mb[2]){
           _mb[2]=0;
           mouse_release(3);
@@ -136,7 +137,7 @@ uint8_t is_mouse(uint8_t code,uint8_t press)
           _mb[4]=0;
           mouse_release(5);
         }
-      }*/
+      }
     }
 
   }
@@ -231,8 +232,12 @@ void sendkey(uint8_t code,uint8_t press){
     if(layers.layer[layers.current_layer].keys[code]!= DISABLED_KEY){
       if(press){
         keyboard_pressScanCode(layers.layer[layers.current_layer].keys[code]);
+        
+        tmplayer[code]=layers.layer[layers.current_layer].keys[code];
+    
       }else{
-        keyboard_releaseScanCode(layers.layer[layers.current_layer].keys[code]);
+        //keyboard_releaseScanCode(layers.layer[layers.current_layer].keys[code]);
+        keyboard_releaseScanCode(tmplayer[code]);
       }
     }
   }
