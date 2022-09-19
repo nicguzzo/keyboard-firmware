@@ -1,0 +1,3 @@
+[submodule "master/master/bluepill_utils"]
+	path = master/master/bluepill_utils
+	url = git@github.com:nicguzzo/bluepill_utils.git

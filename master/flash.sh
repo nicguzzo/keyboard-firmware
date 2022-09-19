@@ -7,3 +7,7 @@ stm32flash -w  build/master.bin -g 0x0 /dev/ttyUSB0
 #stm32flash -w  build/master.bin -g 0x0 /dev/ttyACM0
 
 #st-flash write  build/master.bin 0x8000000
+
+#st-flash read firm.bin 0x8000000
+
+#st-flash write firm.bin 0x8000000

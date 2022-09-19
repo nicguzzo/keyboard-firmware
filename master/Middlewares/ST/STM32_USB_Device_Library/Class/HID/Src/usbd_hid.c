@@ -50,9 +50,11 @@
 #include "usbd_hid.h"
 #include "usbd_desc.h"
 #include "usbd_ctlreq.h"
-
+#include "usb_descriptors.h"
 void Log(const char* fmt, ...);
-uint8_t COMPOSITE_CDC_HID_DESCRIPTOR[100];
+//
+extern uint8_t COMPOSITE_CDC_HID_DESCRIPTOR[COMPOSITE_CDC_HID_DESCRIPTOR_SIZE];
+//uint8_t COMPOSITE_CDC_HID_DESCRIPTOR[100];
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */
